@@ -69,9 +69,8 @@ export default function Login() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-muted/40">
-      <div className="mb-8 flex items-center gap-2 text-primary">
-        <Newspaper className="h-8 w-8" />
-        <span className="font-serif font-bold text-2xl tracking-tight text-foreground">News Master</span>
+      <div className="mb-8 flex items-center gap-3">
+        <img src="/logo.svg" alt="Scrollbrief" className="h-10 w-auto object-contain" />
       </div>
       
       <Card className="w-full max-w-sm">

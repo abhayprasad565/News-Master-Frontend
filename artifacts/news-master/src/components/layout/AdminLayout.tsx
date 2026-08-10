@@ -28,9 +28,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-[100dvh] bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r bg-background">
         <div className="flex h-14 items-center border-b px-6">
-          <Link href="/admin" className="flex items-center gap-2 text-primary">
-            <Newspaper className="h-5 w-5" />
-            <span className="font-serif font-bold text-lg tracking-tight text-foreground">News Master</span>
+          <Link href="/admin" className="flex items-center gap-3">
+            <img src="/logo.svg" alt="Scrollbrief" className="h-7 w-auto object-contain" />
           </Link>
         </div>
         <div className="flex-1 overflow-auto py-4">

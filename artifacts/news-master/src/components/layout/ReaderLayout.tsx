@@ -13,9 +13,8 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
           <div className="flex items-center gap-6">
-            <Link href={me?.user?.role === 'admin' ? '/admin' : '/stories'} className="flex items-center gap-2 text-primary">
-              <Newspaper className="h-6 w-6" />
-              <span className="font-serif font-bold text-xl tracking-tight text-foreground">News Master</span>
+            <Link href={me?.user?.role === 'admin' ? '/admin' : '/stories'} className="flex items-center gap-3">
+              <img src="/logo.svg" alt="Scrollbrief" className="h-8 w-auto object-contain" />
             </Link>
             
             <nav className="hidden md:flex items-center gap-4 text-sm font-medium">

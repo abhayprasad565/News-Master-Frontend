@@ -1,3 +1,5 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="40" fill="#0F0F11"/>
+  <text x="36" y="122" fill="#F3F1EA" font-family="Georgia, 'Times New Roman', serif" font-size="105" font-weight="700">S</text>
+  <circle cx="135" cy="112" r="13" fill="#E53935"/>
 </svg>

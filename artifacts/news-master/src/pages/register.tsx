@@ -86,9 +86,8 @@ export default function Register() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-muted/40 p-4">
-      <Link href="/stories" className="mb-8 flex items-center gap-2 text-primary">
-        <Newspaper className="h-8 w-8" />
-        <span className="font-serif text-2xl font-bold tracking-tight text-foreground">News Master</span>
+      <Link href="/stories" className="mb-8 flex items-center gap-3">
+        <img src="/logo.svg" alt="Scrollbrief" className="h-10 w-auto object-contain" />
       </Link>
 
       <Card className="w-full max-w-sm">
