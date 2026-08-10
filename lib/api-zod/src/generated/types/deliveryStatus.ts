@@ -11,9 +11,13 @@ export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
 
 export const DeliveryStatus = {
   PENDING: 'PENDING',
+  WAITING_FOR_ASSET: 'WAITING_FOR_ASSET',
+  RENDERING: 'RENDERING',
+  READY: 'READY',
   SENDING: 'SENDING',
   SENT: 'SENT',
   RETRY: 'RETRY',
   FAILED: 'FAILED',
+  DEAD: 'DEAD',
   UNKNOWN: 'UNKNOWN',
 } as const;

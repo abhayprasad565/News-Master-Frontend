@@ -5,6 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PostUpdateAudioSelectionMode } from './postUpdateAudioSelectionMode';
 
 export interface PostUpdate {
   /** @nullable */
@@ -20,4 +21,16 @@ export interface PostUpdate {
      * @nullable
      */
   imageBase64?: string | null;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioTrackKey?: string | null;
+  /** @nullable */
+  audioSelectionMode?: PostUpdateAudioSelectionMode;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
 }

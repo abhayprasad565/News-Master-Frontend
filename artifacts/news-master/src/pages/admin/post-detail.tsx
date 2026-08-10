@@ -4,13 +4,14 @@ import {
   usePublishPost, 
   useDeletePost,
   useCreateCorrection,
+  type Destination,
   getGetAdminPostQueryKey,
   getGetAdminPostsQueryKey
 } from '@workspace/api-client-react';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, Edit, Trash2, Send, CheckCircle2, 
-  Clock, XCircle, FileText, AlertTriangle, AlertCircle
+  Clock, XCircle, FileText, AlertTriangle, AlertCircle, Film, Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,34 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { apiFetch } from '../../lib/api';
 
+type PublishFormat = 'IMAGE' | 'REEL';
+type PublishPlanDestination = {
+  destinationId?: string;
+  platform: string;
+  destination: string;
+  label?: string;
+  requiresImage?: boolean;
+  isCompatible?: boolean;
+  supportedFormats?: PublishFormat[];
+  defaultFormat?: PublishFormat;
+  alreadyPublished?: boolean;
+  successfulFormats?: PublishFormat[];
+};
+
+const destinationKey = (destination: PublishPlanDestination) =>
+  destination.destinationId ?? `${destination.platform}:${destination.destination}`;
+
+const supportedFormatsFor = (destination: PublishPlanDestination): PublishFormat[] =>
+  destination.supportedFormats?.length
+    ? destination.supportedFormats
+    : destination.platform === 'instagram'
+      ? ['IMAGE', 'REEL']
+      : ['IMAGE'];
+
+const isFormatComplete = (destination: PublishPlanDestination, format: PublishFormat) =>
+  destination.successfulFormats?.includes(format) ||
+  (destination.alreadyPublished === true && format === (destination.defaultFormat ?? 'IMAGE'));
+
 export default function AdminPostDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
@@ -46,6 +75,8 @@ export default function AdminPostDetail() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [selectAll, setSelectAll] = useState(true);
   const [selectedDestIds, setSelectedDestIds] = useState<string[]>([]);
+  const [formatByDestId, setFormatByDestId] = useState<Record<string, PublishFormat>>({});
+  const [sensitivityOverride, setSensitivityOverride] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionTitle, setCorrectionTitle] = useState('');
   const [correctionText, setCorrectionText] = useState('');
@@ -58,8 +89,22 @@ export default function AdminPostDetail() {
 
   useEffect(() => {
     if (planData?.destinations) {
-      setSelectedDestIds(planData.destinations.map((d: any) => d.destinationId));
+      const destinations = planData.destinations as PublishPlanDestination[];
+      const nextFormats = Object.fromEntries(
+        destinations.map((destination) => {
+          const formats = supportedFormatsFor(destination);
+          return [destinationKey(destination), destination.defaultFormat ?? formats[0] ?? 'IMAGE'];
+        }),
+      );
+      setFormatByDestId(nextFormats);
+      setSelectedDestIds(
+        destinations
+          .filter((destination) => !isFormatComplete(destination, nextFormats[destinationKey(destination)] ?? 'IMAGE'))
+          .map(destinationKey),
+      );
+      setSelectAll(true);
     }
+    setSensitivityOverride(false);
   }, [planData]);
 
   const { data: detail, isLoading, error } = useGetAdminPost(id || '', {
@@ -119,15 +164,22 @@ export default function AdminPostDetail() {
 
   const isMutable = ['DRAFT', 'MANUAL_REVIEW', 'REJECTED', 'VALIDATED'].includes(detail.status);
   const canArchive = detail.status !== 'PUBLISHED';
-  const canPublish = detail.status !== 'PUBLISHED';
+  const canPublish = true;
   const canCorrect = detail.status === 'PUBLISHED';
 
   const handlePublish = () => {
-    const chosenDestinations = selectAll
-      ? (planData?.destinations ?? []).map((d: any) => ({ platform: d.platform, destination: d.destination }))
-      : (planData?.destinations ?? [])
-          .filter((d: any) => selectedDestIds.includes(d.destinationId))
-          .map((d: any) => ({ platform: d.platform, destination: d.destination }));
+    if (planData?.requiresSensitivityOverride && !sensitivityOverride) {
+      toast({ title: 'Confirm sensitivity review before publishing', variant: 'destructive' });
+      return;
+    }
+
+    const destinations = (planData?.destinations ?? []) as PublishPlanDestination[];
+    const chosenDestinations: Destination[] = destinations
+      .filter((destination) => selectedDestIds.includes(destinationKey(destination)))
+      .map((destination) => {
+        const format = formatByDestId[destinationKey(destination)] ?? destination.defaultFormat ?? 'IMAGE';
+        return { platform: destination.platform as Destination['platform'], destination: destination.destination, format };
+      });
 
     if (!chosenDestinations.length) {
       toast({ title: 'Select at least one destination', variant: 'destructive' });
@@ -350,7 +402,11 @@ export default function AdminPostDetail() {
                   const next = !selectAll;
                   setSelectAll(next);
                   if (next) {
-                    setSelectedDestIds(planData.destinations.map((d: any) => d.destinationId));
+                    setSelectedDestIds(
+                      (planData.destinations as PublishPlanDestination[])
+                        .filter((destination) => !isFormatComplete(destination, formatByDestId[destinationKey(destination)] ?? destination.defaultFormat ?? 'IMAGE'))
+                        .map(destinationKey),
+                    );
                   } else {
                     setSelectedDestIds([]);
                   }
@@ -363,7 +419,11 @@ export default function AdminPostDetail() {
                     const val = !!checked;
                     setSelectAll(val);
                     if (val) {
-                      setSelectedDestIds(planData.destinations.map((d: any) => d.destinationId));
+                      setSelectedDestIds(
+                        (planData.destinations as PublishPlanDestination[])
+                          .filter((destination) => !isFormatComplete(destination, formatByDestId[destinationKey(destination)] ?? destination.defaultFormat ?? 'IMAGE'))
+                          .map(destinationKey),
+                      );
                     } else {
                       setSelectedDestIds([]);
                     }
@@ -373,53 +433,103 @@ export default function AdminPostDetail() {
                   <Label htmlFor="select-all" className="font-bold text-sm cursor-pointer text-emerald-900 dark:text-emerald-200">
                     Publish to All Configured Destinations ({planData.destinations.length})
                   </Label>
-                  <p className="text-xs text-muted-foreground">Broadcasts simultaneously across all verified accounts</p>
+                  <p className="text-xs text-muted-foreground">Selects all destinations that still need the chosen format</p>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Configured Channels</Label>
                 <div className="space-y-2">
-                  {planData.destinations.map((dest: any) => {
-                    const isChecked = selectAll || selectedDestIds.includes(dest.destinationId);
+                  {(planData.destinations as PublishPlanDestination[]).map((dest) => {
+                    const key = destinationKey(dest);
+                    const formats = supportedFormatsFor(dest);
+                    const selectedFormat = formatByDestId[key] ?? dest.defaultFormat ?? formats[0] ?? 'IMAGE';
+                    const complete = isFormatComplete(dest, selectedFormat);
+                    const isChecked = !complete && selectedDestIds.includes(key);
                     return (
                       <div
-                        key={dest.destinationId}
-                        className={`flex items-center justify-between p-3 rounded-md border text-sm transition-all cursor-pointer ${isChecked ? 'bg-primary/5 border-primary/50 font-medium' : 'bg-background text-muted-foreground opacity-60'}`}
+                        key={key}
+                        className={`flex flex-col gap-3 p-3 rounded-md border text-sm transition-all ${complete ? 'bg-muted/40 text-muted-foreground' : isChecked ? 'bg-primary/5 border-primary/50 font-medium cursor-pointer' : 'bg-background text-muted-foreground cursor-pointer'}`}
                         onClick={() => {
+                          if (complete) return;
                           if (selectAll) setSelectAll(false);
-                          if (selectedDestIds.includes(dest.destinationId)) {
-                            setSelectedDestIds(selectedDestIds.filter(id => id !== dest.destinationId));
+                          if (selectedDestIds.includes(key)) {
+                            setSelectedDestIds(selectedDestIds.filter(id => id !== key));
                           } else {
-                            const next = [...selectedDestIds, dest.destinationId];
+                            const next = [...selectedDestIds, key];
                             setSelectedDestIds(next);
-                            if (next.length === planData.destinations.length) setSelectAll(true);
+                            const selectableCount = (planData.destinations as PublishPlanDestination[])
+                              .filter((destination) => !isFormatComplete(destination, formatByDestId[destinationKey(destination)] ?? destination.defaultFormat ?? 'IMAGE')).length;
+                            if (next.length === selectableCount) setSelectAll(true);
                           }
                         }}
                       >
-                        <div className="flex items-center space-x-3">
-                          <Checkbox checked={isChecked} />
-                          <div>
-                            <div className="font-semibold text-foreground">{dest.label}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{dest.platform}: {dest.destination}</div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox checked={complete || isChecked} disabled={complete} />
+                            <div>
+                              <div className="font-semibold text-foreground">{dest.label ?? dest.destination}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{dest.platform}: {dest.destination}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {dest.requiresImage && (
+                              <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+                                Requires Image
+                              </Badge>
+                            )}
+                            <Badge variant={complete ? 'secondary' : dest.isCompatible !== false ? 'secondary' : 'destructive'} className="text-[10px]">
+                              {complete ? 'Complete' : dest.isCompatible !== false ? 'Ready' : 'Incompatible'}
+                            </Badge>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {dest.requiresImage && (
-                            <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
-                              Requires Image
-                            </Badge>
-                          )}
-                          <Badge variant={dest.isCompatible ? 'secondary' : 'destructive'} className="text-[10px]">
-                            {dest.isCompatible ? 'Ready' : 'Incompatible'}
-                          </Badge>
+                        <div className="flex items-center gap-2 pl-7" onClick={(event) => event.stopPropagation()}>
+                          <Label className="text-xs text-muted-foreground">Post as</Label>
+                          <Select
+                            value={selectedFormat}
+                            disabled={complete || formats.length === 1}
+                            onValueChange={(value) => {
+                              const nextFormat = value as PublishFormat;
+                              setFormatByDestId((current) => ({ ...current, [key]: nextFormat }));
+                              setSelectedDestIds((current) =>
+                                isFormatComplete(dest, nextFormat)
+                                  ? current.filter((id) => id !== key)
+                                  : current.includes(key)
+                                    ? current
+                                    : [...current, key],
+                              );
+                            }}
+                          >
+                            <SelectTrigger className="h-8 w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="IMAGE">
+                                <span className="inline-flex items-center gap-1"><ImageIcon className="h-3 w-3" /> Image</span>
+                              </SelectItem>
+                              {formats.includes('REEL') && (
+                                <SelectItem value="REEL">
+                                  <span className="inline-flex items-center gap-1"><Film className="h-3 w-3" /> Reel</span>
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
+              {planData.requiresSensitivityOverride && (
+                <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/20">
+                  <Checkbox checked={sensitivityOverride} onCheckedChange={(checked) => setSensitivityOverride(Boolean(checked))} />
+                  <div>
+                    <Label className="font-semibold text-amber-900 dark:text-amber-200">Sensitivity reviewed</Label>
+                    <p className="text-xs text-muted-foreground">Required for image and Reel publishing on sensitive posts.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

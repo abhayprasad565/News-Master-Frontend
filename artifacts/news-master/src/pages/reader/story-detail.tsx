@@ -145,12 +145,16 @@ export default function StoryDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {story.media.map((media, idx) => (
               <div key={idx} className="rounded-lg overflow-hidden border bg-muted aspect-video relative">
-                <img 
-                  src={media.url} 
-                  alt="" 
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
+                {media.type === 'REEL' ? (
+                  <video src={media.url} controls className="w-full h-full object-cover" />
+                ) : (
+                  <img 
+                    src={media.url} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                )}
               </div>
             ))}
           </div>

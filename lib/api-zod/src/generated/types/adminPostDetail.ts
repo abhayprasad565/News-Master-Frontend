@@ -5,6 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminPostDetailAudioSelectionMode } from './adminPostDetailAudioSelectionMode';
 import type { AdminPostDetailKind } from './adminPostDetailKind';
 import type { AdminPostDetailStatus } from './adminPostDetailStatus';
 import type { Delivery } from './delivery';
@@ -38,6 +39,16 @@ export interface AdminPostDetail {
   archivedAt?: string | null;
   /** @nullable */
   sourceImageKey?: string | null;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioSelectionMode?: AdminPostDetailAudioSelectionMode;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
   publication?: Publication;
   /** @nullable */
   deliveries?: Delivery[] | null;

@@ -11,7 +11,7 @@ import {
   getGetAdminPostQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 const formSchema = z.object({
   title: z.string().optional(),
@@ -27,6 +29,11 @@ const formSchema = z.object({
   eventId: z.string().optional(),
   labelIds: z.array(z.string()).default([]),
   imageBase64: z.string().optional(),
+  audioTrackId: z.string().optional(),
+  audioSelectionMode: z.enum(['AUTO', 'MANUAL']).default('AUTO'),
+  audioStartSeconds: z.number().min(0).default(0),
+  audioVolume: z.number().min(0).max(1).default(1),
+  reelDurationSeconds: z.number().min(3).max(90).default(10),
 });
 
 export default function AdminEditPost() {
@@ -42,7 +49,17 @@ export default function AdminEditPost() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { title: '', text: '', eventId: '', labelIds: [] },
+    defaultValues: {
+      title: '',
+      text: '',
+      eventId: '',
+      labelIds: [],
+      audioTrackId: '',
+      audioSelectionMode: 'AUTO',
+      audioStartSeconds: 0,
+      audioVolume: 1,
+      reelDurationSeconds: 10,
+    },
   });
 
   // Init form
@@ -53,6 +70,11 @@ export default function AdminEditPost() {
         text: post.text,
         eventId: post.eventId || '',
         labelIds: post.labels.map(l => l.id),
+        audioTrackId: post.audioTrackId || '',
+        audioSelectionMode: post.audioSelectionMode || 'AUTO',
+        audioStartSeconds: post.audioStartSeconds ?? 0,
+        audioVolume: post.audioVolume ?? 1,
+        reelDurationSeconds: post.reelDurationSeconds ?? 10,
       });
     }
   }, [post, form]);
@@ -101,6 +123,7 @@ export default function AdminEditPost() {
         ...values,
         eventId: values.eventId || undefined,
         title: values.title || undefined,
+        audioTrackId: values.audioSelectionMode === 'MANUAL' ? values.audioTrackId || undefined : undefined,
       }
     });
   }
@@ -246,6 +269,125 @@ export default function AdminEditPost() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div className="space-y-5 rounded-lg border bg-muted/20 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <FormLabel className="flex items-center gap-2 font-semibold">
+                      <Music2 className="h-4 w-4" />
+                      Reel Audio
+                    </FormLabel>
+                    <FormDescription>Saved with the post and used when Instagram Reel publishing is requested.</FormDescription>
+                  </div>
+                  <Badge variant="outline">{form.watch('audioSelectionMode')}</Badge>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="audioSelectionMode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Selection mode</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="AUTO">Automatic rotation</SelectItem>
+                            <SelectItem value="MANUAL">Manual track</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="audioTrackId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manual audio track ID</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="UUID or configured track key"
+                            disabled={form.watch('audioSelectionMode') !== 'MANUAL'}
+                            className="font-mono text-sm"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>Required only when manual selection is enabled.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="audioStartSeconds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start offset: {field.value}s</FormLabel>
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={120}
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={([value]) => field.onChange(value ?? 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="audioVolume"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Volume: {Math.round(field.value * 100)}%</FormLabel>
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.05}
+                            value={[field.value]}
+                            onValueChange={([value]) => field.onChange(value ?? 1)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="reelDurationSeconds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reel duration: {field.value}s</FormLabel>
+                        <FormControl>
+                          <Slider
+                            min={3}
+                            max={90}
+                            step={1}
+                            value={[field.value]}
+                            onValueChange={([value]) => field.onChange(value ?? 10)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end pt-6 border-t gap-4">

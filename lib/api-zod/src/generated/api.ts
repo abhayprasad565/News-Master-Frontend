@@ -97,7 +97,8 @@ export const GetStoriesResponse = zod.object({
   "publishedAt": zod.string().nullish(),
   "media": zod.array(zod.object({
   "url": zod.string(),
-  "type": zod.string().nullish()
+  "type": zod.union([zod.literal('GRAPHIC'),zod.literal('TEXT_ONLY'),zod.literal('REEL'),zod.literal(null)]).nullish(),
+  "mimeType": zod.string().nullish()
 })),
   "platformLinks": zod.array(zod.object({
   "platform": zod.string(),
@@ -137,7 +138,8 @@ export const GetStoryResponse = zod.object({
   "publishedAt": zod.string().nullish(),
   "media": zod.array(zod.object({
   "url": zod.string(),
-  "type": zod.string().nullish()
+  "type": zod.union([zod.literal('GRAPHIC'),zod.literal('TEXT_ONLY'),zod.literal('REEL'),zod.literal(null)]).nullish(),
+  "mimeType": zod.string().nullish()
 })),
   "platformLinks": zod.array(zod.object({
   "platform": zod.string(),
@@ -303,7 +305,13 @@ export const CreatePostBody = zod.object({
   "text": zod.string(),
   "eventId": zod.string().nullish(),
   "labelIds": zod.array(zod.string()).nullish(),
-  "imageBase64": zod.string().max(createPostBodyImageBase64Max).nullish()
+  "imageBase64": zod.string().max(createPostBodyImageBase64Max).nullish(),
+  "audioTrackId": zod.string().nullish(),
+  "audioTrackKey": zod.string().nullish(),
+  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
+  "audioStartSeconds": zod.number().nullish(),
+  "audioVolume": zod.number().nullish(),
+  "reelDurationSeconds": zod.number().nullish()
 })
 
 export const CreatePostResponse = zod.object({
@@ -369,6 +377,11 @@ export const GetAdminPostResponse = zod.object({
   "publishedAt": zod.string().nullish(),
   "archivedAt": zod.string().nullish(),
   "sourceImageKey": zod.string().nullish(),
+  "audioTrackId": zod.string().nullish(),
+  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
+  "audioStartSeconds": zod.number().nullish(),
+  "audioVolume": zod.number().nullish(),
+  "reelDurationSeconds": zod.number().nullish(),
   "publication": zod.object({
   "id": zod.string(),
   "postId": zod.string(),
@@ -381,7 +394,8 @@ export const GetAdminPostResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()
@@ -405,7 +419,13 @@ export const UpdatePostBody = zod.object({
   "text": zod.string().nullish(),
   "eventId": zod.string().nullish(),
   "labelIds": zod.array(zod.string()).nullish(),
-  "imageBase64": zod.string().max(updatePostBodyImageBase64Max).nullish()
+  "imageBase64": zod.string().max(updatePostBodyImageBase64Max).nullish(),
+  "audioTrackId": zod.string().nullish(),
+  "audioTrackKey": zod.string().nullish(),
+  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
+  "audioStartSeconds": zod.number().nullish(),
+  "audioVolume": zod.number().nullish(),
+  "reelDurationSeconds": zod.number().nullish()
 })
 
 export const UpdatePostResponse = zod.object({
@@ -459,7 +479,8 @@ export const PublishPostParams = zod.object({
 export const PublishPostBody = zod.object({
   "destinations": zod.array(zod.object({
   "platform": zod.enum(['telegram', 'instagram', 'x', 'webhook', 'whatsapp']),
-  "destination": zod.string()
+  "destination": zod.string(),
+  "format": zod.enum(['IMAGE', 'REEL']).optional()
 }))
 })
 
@@ -660,7 +681,8 @@ export const GetEventResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()
@@ -794,7 +816,8 @@ export const GetPublicationResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()
@@ -819,7 +842,8 @@ export const GetDeliveriesResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()
@@ -842,7 +866,8 @@ export const GetDeliveryResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()
@@ -949,6 +974,14 @@ export const GetPlatformPostsResponse = zod.object({
   "remoteId": zod.string().nullish(),
   "content": zod.string().nullish(),
   "mediaUrl": zod.string().nullish(),
+  "format": zod.enum(['IMAGE', 'REEL']),
+  "audioTrackId": zod.string().nullish(),
+  "audioStorageKey": zod.string().nullish(),
+  "audioSource": zod.string().nullish(),
+  "audioNormalizedSha256": zod.string().nullish(),
+  "audioStartSeconds": zod.number().nullish(),
+  "audioVolume": zod.number().nullish(),
+  "reelDurationSeconds": zod.number().nullish(),
   "requestPayload": zod.record(zod.string(), zod.unknown()).optional(),
   "responsePayload": zod.record(zod.string(), zod.unknown()).optional(),
   "publishedAt": zod.string().nullish(),
@@ -977,6 +1010,14 @@ export const GetPlatformPostResponse = zod.object({
   "remoteId": zod.string().nullish(),
   "content": zod.string().nullish(),
   "mediaUrl": zod.string().nullish(),
+  "format": zod.enum(['IMAGE', 'REEL']),
+  "audioTrackId": zod.string().nullish(),
+  "audioStorageKey": zod.string().nullish(),
+  "audioSource": zod.string().nullish(),
+  "audioNormalizedSha256": zod.string().nullish(),
+  "audioStartSeconds": zod.number().nullish(),
+  "audioVolume": zod.number().nullish(),
+  "reelDurationSeconds": zod.number().nullish(),
   "requestPayload": zod.record(zod.string(), zod.unknown()).optional(),
   "responsePayload": zod.record(zod.string(), zod.unknown()).optional(),
   "publishedAt": zod.string().nullish(),
@@ -1021,7 +1062,8 @@ export const GetPlatformPostResponse = zod.object({
   "platform": zod.string(),
   "destination": zod.string().nullish(),
   "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'UNKNOWN']),
+  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
+  "format": zod.enum(['IMAGE', 'REEL']),
   "attemptCount": zod.number(),
   "lastError": zod.string().nullish(),
   "sentAt": zod.string().nullish()

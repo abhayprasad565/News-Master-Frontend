@@ -74,7 +74,11 @@ export default function AdminDeliveryDetail() {
     switch (s) {
       case 'SENT': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Sent</Badge>;
       case 'FAILED': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Failed</Badge>;
+      case 'DEAD': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Dead</Badge>;
       case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
+      case 'WAITING_FOR_ASSET': return <Badge variant="outline" className="border-slate-500 text-slate-600">Waiting for asset</Badge>;
+      case 'RENDERING': return <Badge variant="outline" className="border-indigo-500 text-indigo-600">Rendering</Badge>;
+      case 'READY': return <Badge variant="outline" className="border-cyan-500 text-cyan-600">Ready</Badge>;
       case 'SENDING': return <Badge variant="outline" className="border-blue-500 text-blue-600">Sending...</Badge>;
       case 'RETRY': return <Badge variant="outline" className="border-amber-500 text-amber-600">Retry</Badge>;
       case 'UNKNOWN': return <Badge variant="outline" className="border-purple-500 text-purple-600">Unknown</Badge>;
@@ -82,7 +86,7 @@ export default function AdminDeliveryDetail() {
     }
   };
 
-  const showRetry = delivery.status === 'FAILED' || delivery.status === 'RETRY';
+  const showRetry = delivery.status === 'FAILED' || delivery.status === 'RETRY' || delivery.status === 'DEAD';
   const showReconcile = delivery.status === 'UNKNOWN';
 
   const handleRetry = () => {
@@ -199,6 +203,10 @@ export default function AdminDeliveryDetail() {
             <div className="flex flex-col border-b pb-2">
               <span className="text-muted-foreground text-xs mb-1">Destination</span>
               <span className="font-mono">{delivery.destination || 'Default'}</span>
+            </div>
+            <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Format</span>
+              <Badge variant={delivery.format === 'REEL' ? 'default' : 'outline'}>{delivery.format ?? 'IMAGE'}</Badge>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Attempts</span>

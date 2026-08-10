@@ -32,7 +32,11 @@ export default function AdminPublicationDetail() {
     switch (status) {
       case 'SENT': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Sent</Badge>;
       case 'FAILED': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Failed</Badge>;
+      case 'DEAD': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Dead</Badge>;
       case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
+      case 'WAITING_FOR_ASSET': return <Badge variant="outline" className="border-slate-500 text-slate-600">Waiting for asset</Badge>;
+      case 'RENDERING': return <Badge variant="outline" className="border-indigo-500 text-indigo-600">Rendering</Badge>;
+      case 'READY': return <Badge variant="outline" className="border-cyan-500 text-cyan-600">Ready</Badge>;
       case 'SENDING': return <Badge variant="outline" className="border-blue-500 text-blue-600">Sending...</Badge>;
       case 'RETRY': return <Badge variant="outline" className="border-amber-500 text-amber-600">Retry</Badge>;
       case 'UNKNOWN': return <Badge variant="outline" className="border-purple-500 text-purple-600">Unknown</Badge>;
@@ -101,7 +105,13 @@ export default function AdminPublicationDetail() {
               <div className="flex justify-between border-t pt-2">
                 <span>Failed</span>
                 <span className="font-medium text-destructive">
-                  {deliveries?.filter(d => d.status === 'FAILED').length || 0}
+                  {deliveries?.filter(d => d.status === 'FAILED' || d.status === 'DEAD').length || 0}
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Rendering / waiting</span>
+                <span className="font-medium text-indigo-600">
+                  {deliveries?.filter(d => ['WAITING_FOR_ASSET', 'RENDERING', 'READY', 'PENDING'].includes(d.status)).length || 0}
                 </span>
               </div>
             </div>
@@ -118,6 +128,7 @@ export default function AdminPublicationDetail() {
             <thead className="bg-muted/50 text-muted-foreground border-b border-t">
               <tr>
                 <th className="px-4 py-3 font-medium w-32">Platform</th>
+                <th className="px-4 py-3 font-medium w-24">Format</th>
                 <th className="px-4 py-3 font-medium">Destination</th>
                 <th className="px-4 py-3 font-medium w-32">Status</th>
                 <th className="px-4 py-3 font-medium w-24">Attempts</th>
@@ -127,7 +138,7 @@ export default function AdminPublicationDetail() {
             <tbody className="divide-y">
               {!deliveries?.length ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     No deliveries recorded for this publication.
                   </td>
                 </tr>
@@ -135,6 +146,11 @@ export default function AdminPublicationDetail() {
                 deliveries.map((del) => (
                   <tr key={del.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium capitalize">{del.platform}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={del.format === 'REEL' ? 'default' : 'outline'} className="text-[10px]">
+                        {del.format ?? 'IMAGE'}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs">{del.destination || '-'}</td>
                     <td className="px-4 py-3">{getDeliveryStatusBadge(del.status)}</td>
                     <td className="px-4 py-3 text-center">{del.attemptCount}</td>
@@ -143,7 +159,7 @@ export default function AdminPublicationDetail() {
                         <Link href={`/admin/deliveries/${del.id}`} className="text-primary hover:underline text-xs flex items-center">
                           Details
                         </Link>
-                        {(del.status === 'FAILED' || del.status === 'UNKNOWN' || del.status === 'RETRY') && (
+                        {(del.status === 'FAILED' || del.status === 'DEAD' || del.status === 'UNKNOWN' || del.status === 'RETRY') && (
                           <Button
                             variant="outline"
                             size="sm"
