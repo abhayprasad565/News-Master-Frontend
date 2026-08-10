@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "News Master"
+version = "1.0.0"
+id = "artifacts/news-master"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26049
+
+[services.development]
+run = "pnpm --filter @workspace/news-master run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/news-master", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/news-master/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26049"
+BASE_PATH = "/"

@@ -1,0 +1,1656 @@
+# News Master Frontend Specification
+
+## 1. Product Scope
+
+News Master needs a browser frontend with three access levels:
+
+1. Anonymous experience: visitors browse published, reader-safe stories without logging in.
+2. Reader account experience: readers may register, log in, and retain an account for future reader-specific features.
+3. Admin experience: authenticated editors manage review, posts, labels, publications, deliveries, and Instagram/X output records.
+
+The backend supports public reader story projections, optional reader accounts, HTTP-only cookie sessions, role-protected admin workflows, and existing bearer-token admin auth for operational/API clients.
+
+## 2. Roles
+
+### Reader
+
+Capabilities:
+
+- Read published stories and public labels without an account.
+- Create a reader account with username, email, and password.
+- Log in with username or email and log out.
+- Read `/auth/me` to resolve the active session.
+- View published stories only.
+- Search and filter stories by label, query, platform, and date range.
+- Open story detail pages.
+- See public media URLs and public platform links for published output.
+- View public labels.
+
+Restrictions:
+
+- Cannot access `/admin/*`, `/review`, `/events`, `/audit`, `/metrics`, or editorial APIs.
+- Cannot see unpublished posts, admin-only labels, audit records, job payloads, validation failures, delivery errors, or internal platform payloads.
+- Cannot create, edit, delete, publish, retry, reconcile, approve, reject, or requeue anything.
+
+### Admin / Editor
+
+Capabilities:
+
+- Log in with the environment master credential or a database-backed admin account.
+- Access all reader routes.
+- View metrics, event details, audit timelines, review queue, editorial topic signals, posts, labels, publications, deliveries, and platform posts.
+- Approve, reject, requeue, or request correction for manual-review jobs.
+- Create custom posts in `DRAFT`.
+- Edit mutable posts.
+- Soft archive unpublished posts.
+- Publish posts to selected destinations.
+- Create correction drafts for published posts.
+- Create, edit, and soft archive labels.
+- Inspect publication deliveries, attempts, remote IDs, content, media URLs, request/response payloads, errors, and source post/publication links.
+- Retry failed/retryable deliveries.
+- Reconcile unknown deliveries.
+
+Restrictions:
+
+- Published posts are immutable. Corrections create new posts linked to the original.
+- Delete/archive is allowed only for unpublished posts.
+- Platform post records are read-only in this MVP; remote Instagram/X delete/edit operations are not supported.
+- Admin mutations are audited server-side where implemented.
+- Admin accounts cannot be created by public registration. They are provisioned through trusted backend SQL only.
+
+## 3. Authentication and Authorization
+
+### Browser Session Auth
+
+Implemented endpoints:
+
+- `POST /auth/login`
+- `POST /auth/register`
+- `POST /auth/logout`
+- `GET /auth/me`
+
+Session behavior:
+
+- Cookie name: `news_master_session`
+- HTTP-only
+- `SameSite=Lax`
+- `Secure` when `WEB_COOKIE_SECURE=true`
+- HMAC-signed using `WEB_SESSION_SECRET`
+- Stable account identity and role embedded as `admin` or `reader`
+- Default lifetime: 12 hours
+
+Environment configuration:
+
+- `WEB_SESSION_SECRET`
+- `WEB_MASTER_USERNAME`
+- `WEB_MASTER_PASSWORD`
+- `WEB_COOKIE_SECURE`
+- `WEB_ALLOWED_ORIGINS`
+
+Login request:
+
+```json
+{
+  "identifier": "reader-name-or-email@example.com",
+  "password": "reader-password"
+}
+```
+
+Login response:
+
+```json
+{
+  "user": {
+    "id": "account-id",
+    "username": "reader-name",
+    "email": "reader@example.com",
+    "role": "reader"
+  }
+}
+```
+
+`GET /auth/me` response:
+
+```json
+{
+  "user": {
+    "id": "master",
+    "username": "admin",
+    "email": null,
+    "role": "admin"
+  }
+}
+```
+
+If no valid session exists:
+
+```json
+{
+  "user": null
+}
+```
+
+Frontend requirements:
+
+- Use `credentials: "include"` for all auth calls and authenticated admin requests.
+- Do not store bearer tokens in browser local storage.
+- Never redirect anonymous users away from public story, story detail, or public label routes.
+- Redirect unauthenticated users only when they enter `/admin/*`.
+- Redirect readers away from admin routes.
+- Redirect admins from `/login` to `/admin`.
+
+### Account Provisioning
+
+- Public registration always creates `role = reader`; the request must never accept a role field.
+- The master admin is configured only with `WEB_MASTER_USERNAME` and `WEB_MASTER_PASSWORD`.
+- Additional readers or admins are stored in `web_users` and can be provisioned by trusted SQL using a scrypt password hash.
+- Generate a database password hash by entering the password on standard input with `npm run auth:hash-password`.
+- Archived database users cannot log in. Changing a user's role in SQL affects the next login/session, so existing sessions should be logged out after a role change.
+
+Example trusted SQL shape (use generated UUID and hash values):
+
+```sql
+INSERT INTO web_users (id, username, email, password_hash, role)
+VALUES ('<uuid>', 'editor_name', 'editor@example.com', '<scrypt-hash>', 'admin');
+```
+
+### Route Access Matrix
+
+| Surface                                                      | Anonymous | Reader session | Admin session | Admin bearer     |
+| ------------------------------------------------------------ | --------- | -------------- | ------------- | ---------------- |
+| `GET /stories`, `GET /stories/:id`, `GET /labels`            | Allow     | Allow          | Allow         | Allow            |
+| `POST /auth/register`, login/logout/me                       | Allow     | Allow          | Allow         | Allow            |
+| `/admin/*`, `/review`, `/events`, `/audit`, `/metrics` reads | Deny      | Deny           | Allow         | Read/write token |
+| Admin/review/editorial mutations                             | Deny      | Deny           | Allow         | Write token only |
+
+### Existing Bearer Admin Auth
+
+The backend still accepts existing admin bearer tokens:
+
+- Read routes accept `ADMIN_READ_TOKEN` or `ADMIN_WRITE_TOKEN`.
+- Mutations require `ADMIN_WRITE_TOKEN`.
+- In non-production, fallback token is `dev-admin-token` if no admin token is configured.
+
+The frontend should use cookie auth. Bearer auth is for scripts, operators, and tests.
+
+### CORS
+
+The backend supports configured cross-origin browser clients:
+
+- Allowed origins come from `WEB_ALLOWED_ORIGINS`.
+- Preflight `OPTIONS` returns CORS headers for allowed origins.
+- Credentials are allowed for session cookies.
+
+Frontend requirements:
+
+- Deploy the frontend on an origin listed in `WEB_ALLOWED_ORIGINS`.
+- Always include credentials for authenticated requests.
+
+## 4. Information Architecture
+
+### Reader Routes
+
+- `/login`
+- `/register`
+- `/stories`
+- `/stories/:storyId`
+- `/labels/:labelSlug`
+- `/account`
+
+Primary reader navigation:
+
+- Stories
+- Labels
+- Account or Sign in (optional; reading remains public)
+
+### Admin Routes
+
+- `/admin/login`
+- `/admin`
+- `/admin/review`
+- `/admin/posts`
+- `/admin/posts/new`
+- `/admin/posts/:postId`
+- `/admin/posts/:postId/edit`
+- `/admin/events/:eventId`
+- `/admin/publications`
+- `/admin/publications/:publicationId`
+- `/admin/deliveries`
+- `/admin/deliveries/:deliveryId`
+- `/admin/platforms/instagram`
+- `/admin/platforms/x`
+- `/admin/platform-posts/:platformPostId`
+- `/admin/labels`
+- `/admin/audit/:entityType/:entityId`
+- `/admin/settings`
+
+Primary admin navigation:
+
+- Dashboard
+- Review
+- Posts
+- Publications
+- Deliveries
+- Instagram
+- X
+- Labels
+- Settings
+
+## 5. Implemented API Surface
+
+All JSON errors follow:
+
+- `error`
+- `message`
+- `requestId`
+- `details`, when available
+
+Common statuses:
+
+- `400`: validation error
+- `401`: authentication required
+- `403`: insufficient scope
+- `404`: route or entity not found
+- `409`: invalid transition or stale mutation
+- `413`: request body exceeds 64 KiB
+- `429`: rate limited
+- `503`: database or service unavailable
+
+### System
+
+#### `GET /health`
+
+Auth: public.
+
+Response:
+
+- `status`: `ready` or `not_ready`
+- `role`
+- `dependencies.database`
+
+#### `GET /openapi.json`
+
+Auth: public.
+
+Response:
+
+- OpenAPI 3.1 document for API client generation.
+
+#### `GET /media/:storageKey`
+
+Auth: public.
+
+Response:
+
+- Media asset file from backend media storage.
+
+Frontend usage:
+
+- Display story graphics/assets from URLs returned by story projection.
+
+#### `GET /metrics`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `prometheus`: string
+
+### Auth
+
+#### `POST /auth/login`
+
+Auth: public.
+
+Request:
+
+- `identifier`: username or email
+- `password`
+
+Response:
+
+- `user.email`
+- `user.id`
+- `user.username`
+- `user.role`: `admin` or `reader`
+
+Side effect:
+
+- Sets `news_master_session` cookie.
+
+#### `POST /auth/register`
+
+Auth: public.
+
+Request:
+
+- `username`: 3-50 letters, numbers, `.`, `_`, or `-`; stored lowercase
+- `email`: valid, unique email address
+- `password`: at least 10 characters
+
+Response: `201` with `user.id`, `user.username`, `user.email`, and `user.role = reader`.
+
+Side effect:
+
+- Creates only a reader account.
+- Sets `news_master_session` so the reader is logged in immediately.
+- Rejects duplicate username/email and rejects unknown fields such as `role`.
+
+#### `POST /auth/logout`
+
+Auth: public.
+
+Response:
+
+- `{ "ok": true }`
+
+Side effect:
+
+- Clears `news_master_session` cookie.
+
+#### `GET /auth/me`
+
+Auth: public.
+
+Response:
+
+- `{ "user": null }` or current user object.
+
+### Reader Stories and Labels
+
+#### `GET /stories`
+
+Auth:
+
+- Public; no session required.
+
+Query params:
+
+- `limit`: optional integer, `1..100`
+- `cursor`: optional opaque cursor
+- `label`: optional public label slug
+- `q`: optional text search
+- `platform`: optional platform filter, for example `instagram` or `x`
+- `category`: optional primary news category filter
+- `from`: optional date/time
+- `to`: optional date/time
+
+Response:
+
+- `items`: published story projections
+- `nextCursor`: string or null
+
+Story projection fields:
+
+- `id`
+- `eventId`
+- `kind`: `ORIGINAL`, `CORRECTION`, or `CUSTOM`
+- `title`
+- `text`
+- `labels`: public labels only
+- `publishedAt`
+- `category`: public primary news category, or `null` for legacy/custom stories
+- `urgent`: public boolean derived from the active `URGENT` ranking tier
+- `media`: public media URLs from `post_assets`
+- `platformLinks`: public platform-post identifiers and destinations
+- `correctionOfPostId`
+
+Reader exclusions:
+
+- No audit records.
+- No job payloads.
+- No internal validation failures.
+- No admin-only labels.
+- No delivery errors.
+- No platform request/response payloads.
+
+#### `GET /stories/:storyId`
+
+Auth:
+
+- Public; no session required.
+
+Response:
+
+- Single published story projection.
+
+Rules:
+
+- Return `404` for unpublished, archived, missing, or otherwise non-reader-safe posts.
+
+#### `GET /labels`
+
+Auth:
+
+- Public; no session required.
+
+Response:
+
+- `items`: non-archived labels where `visibility = PUBLIC`
+
+### Admin Labels
+
+#### `GET /admin/labels`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `items`: labels including admin-only and archived labels
+
+#### `POST /admin/labels`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "name": "Politics",
+  "slug": "politics",
+  "description": "Government and policy stories",
+  "color": "#2563eb",
+  "visibility": "PUBLIC"
+}
+```
+
+Rules:
+
+- `slug` is optional on create; backend can derive it from `name`.
+- Slugs are unique.
+- `visibility` defaults to `PUBLIC`.
+- `color` defaults to `#2563eb`.
+
+#### `PATCH /admin/labels/:labelId`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+- Any subset of `name`, `slug`, `description`, `color`, `visibility`
+
+Rules:
+
+- Slug can be changed explicitly.
+- Slug uniqueness is enforced by the database.
+
+#### `DELETE /admin/labels/:labelId`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Behavior:
+
+- Soft archives the label by setting `archivedAt`.
+
+### Admin Posts
+
+#### `GET /admin/posts`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+- `status`
+- `kind`
+- `includeArchived=true`
+
+Response:
+
+- `items`: admin post projections
+- `nextCursor`
+
+Admin post fields:
+
+- `id`
+- `eventId`
+- `kind`: `ORIGINAL`, `CORRECTION`, or `CUSTOM`
+- `status`: `DRAFT`, `VALIDATING`, `VALIDATED`, `MANUAL_REVIEW`, `REJECTED`, or `PUBLISHED`
+- `title`
+- `text`
+- `labels`
+- `validationReason`
+- `correctionOfPostId`
+- `replacementFactIds`
+- `createdBy`
+- `updatedBy`
+- `createdAt`
+- `publishedAt`
+- `archivedAt`
+
+#### `POST /admin/posts`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Creates:
+
+- A `CUSTOM` post in `DRAFT`.
+
+Request:
+
+```json
+{
+  "title": "Optional title",
+  "text": "Post body",
+  "eventId": null,
+  "labelIds": ["00000000-0000-0000-0000-000000000000"]
+}
+```
+
+Rules:
+
+- `text` is required.
+- `title`, `eventId`, and `labelIds` are optional.
+- `eventId` may be `null` for custom posts.
+
+#### `GET /admin/posts/:postId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- Admin post projection
+- `publication`, if present
+- `deliveries`, if present
+
+#### `PATCH /admin/posts/:postId`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+- Any subset of `title`, `text`, `eventId`, `labelIds`
+
+Editable statuses:
+
+- `DRAFT`
+- `MANUAL_REVIEW`
+- `REJECTED`
+- `VALIDATED`
+
+Rejected status:
+
+- `PUBLISHED`
+
+#### `DELETE /admin/posts/:postId`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Behavior:
+
+- Soft archives unpublished posts.
+
+Rejected status:
+
+- `PUBLISHED`
+
+#### `POST /admin/posts/:postId/publish`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "destinations": [
+    {
+      "platform": "instagram",
+      "destination": "main-account"
+    },
+    {
+      "platform": "x",
+      "destination": "main-account"
+    }
+  ]
+}
+```
+
+Supported platform values:
+
+- `telegram`
+- `instagram`
+- `x`
+- `webhook`
+- `whatsapp`
+
+Behavior:
+
+- Requires at least one destination.
+- Creates or reuses a publication row.
+- Creates delivery rows for destinations.
+- Marks the post as `PUBLISHED`.
+- Direct publish is supported for `CUSTOM` posts in `DRAFT`.
+- Generated posts should normally be `VALIDATED` before publish.
+
+#### `POST /admin/posts/:postId/corrections`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "title": "Correction title",
+  "text": "Correction body",
+  "labelIds": []
+}
+```
+
+Behavior:
+
+- Requires the source post to be `PUBLISHED`.
+- Creates a new `CORRECTION` draft linked to the original.
+- Does not modify the original published post.
+
+### Review
+
+#### `GET /review`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+
+Response:
+
+- Manual-review pipeline jobs.
+
+#### `POST /review/jobs/:jobId/approve`
+
+#### `POST /review/jobs/:jobId/reject`
+
+#### `POST /review/jobs/:jobId/requeue`
+
+#### `POST /review/jobs/:jobId/request-correction`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "version": 1,
+  "action": "APPROVE",
+  "reason": "Reviewed against supporting evidence.",
+  "expectedVersion": 1
+}
+```
+
+Action values:
+
+- `APPROVE`
+- `REJECT`
+- `REQUEUE`
+- `REQUEST_CORRECTION`
+
+Rules:
+
+- `reason` is required.
+- `expectedVersion` is required.
+- On stale version, backend returns conflict.
+- `request-correction` currently records a distinct audited review decision and returns the job to ready work.
+
+### Events, Editorial, and Audit
+
+#### `GET /events/:eventId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `event`
+- `claims`
+- `claimEvidence`
+- `facts`
+- `post`
+- `publication`
+- `deliveries`
+
+Frontend usage:
+
+- Admin event detail page.
+- Review side panel.
+- Publication diagnosis.
+
+Current limitation:
+
+- There is no `GET /events` list route.
+
+#### `GET /audit/:entityType/:entityId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+
+Response:
+
+- `items`
+- `nextCursor`
+
+#### `GET /editorial/events/:eventId/topics`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `items`: topic signals and active overrides.
+
+#### `PUT /editorial/topics/:topicId/override`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "version": 1,
+  "mode": "BOOST",
+  "boost": 100,
+  "reason": "Major developing story",
+  "expiresAt": "2026-07-31T12:00:00.000Z"
+}
+```
+
+Modes:
+
+- `BOOST`
+- `PIN`
+- `SUPPRESS`
+
+### Publications and Deliveries
+
+#### `GET /admin/publications`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+
+Response:
+
+- `items`: publication records
+- `nextCursor`
+
+#### `GET /admin/publications/:publicationId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `publication`
+- `post`
+- `deliveries`
+
+#### `GET /admin/deliveries`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+- `status`: `PENDING`, `SENDING`, `SENT`, `RETRY`, `FAILED`, or `UNKNOWN`
+- `platform`
+
+Response:
+
+- `items`: delivery records
+- `nextCursor`
+
+#### `GET /admin/deliveries/:deliveryId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `delivery`
+- `publication`
+- `post`
+- `attempts`
+
+#### `POST /admin/deliveries/:deliveryId/retry`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "reason": "Retry after transient API failure."
+}
+```
+
+Rules:
+
+- Allowed for deliveries in `FAILED` or `RETRY`.
+- Rejected for `PENDING`, `SENDING`, `SENT`, and `UNKNOWN`.
+
+#### `POST /admin/deliveries/:deliveryId/reconcile`
+
+Auth:
+
+- Admin session, or admin bearer write token.
+
+Request:
+
+```json
+{
+  "outcome": "NOT_SENT",
+  "reason": "No remote post was created."
+}
+```
+
+Outcome values:
+
+- `SENT`
+- `NOT_SENT`
+- `FAILED`
+
+Rules:
+
+- Allowed only for `UNKNOWN` deliveries.
+
+### Platform Posts
+
+#### `GET /admin/platform-posts`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Query params:
+
+- `limit`
+- `cursor`
+- `platform`: `instagram` or `x`
+
+Response:
+
+- `items`: platform post records
+- `nextCursor`
+
+Platform post fields:
+
+- `id`
+- `postId`
+- `publicationId`
+- `deliveryId`
+- `attemptId`
+- `platform`
+- `destination`
+- `remoteId`
+- `content`
+- `mediaUrl`
+- `requestPayload`
+- `responsePayload`
+- `publishedAt`
+- `createdAt`
+
+#### `GET /admin/platform-posts/:platformPostId`
+
+Auth:
+
+- Admin session, or admin bearer read/write token.
+
+Response:
+
+- `platformPost`
+- `post`
+- `publication`
+- `delivery`
+
+Rules:
+
+- Read-only in this MVP.
+- No frontend delete/edit UI for platform posts unless the backend adds remote platform mutation APIs later.
+
+## 6. Core Data Models
+
+### Story
+
+Reader-safe projection:
+
+- `id`
+- `eventId`
+- `kind`
+- `title`
+- `text`
+- `labels`
+- `publishedAt`
+- `media`
+- `platformLinks`
+- `correctionOfPostId`
+
+### Label
+
+Fields:
+
+- `id`
+- `name`
+- `slug`
+- `description`
+- `color`
+- `visibility`
+- `archivedAt`
+- `createdAt`
+- `updatedAt`
+
+Reader label rules:
+
+- Show only `PUBLIC` labels where `archivedAt` is null.
+
+### Admin Post
+
+Fields:
+
+- `id`
+- `eventId`
+- `kind`
+- `status`
+- `title`
+- `text`
+- `labels`
+- `validationReason`
+- `correctionOfPostId`
+- `replacementFactIds`
+- `createdBy`
+- `updatedBy`
+- `createdAt`
+- `publishedAt`
+- `archivedAt`
+- `publication`, on detail
+- `deliveries`, on detail
+
+### Publication
+
+Fields:
+
+- `id`
+- `postId`
+- `revision`
+- `createdAt`
+
+### Delivery
+
+Fields:
+
+- `id`
+- `publicationId`
+- `platform`
+- `destination`
+- `idempotencyKey`
+- `status`
+- `attemptCount`
+- `lastError`
+- `sentAt`
+
+### Delivery Attempt
+
+Fields:
+
+- `id`
+- `deliveryId`
+- `attemptNumber`
+- `outcome`
+- `remoteId`
+- `statusCode`
+- `errorMessage`
+- `requestPayload`
+- `responsePayload`
+- `createdAt`
+
+### Platform Post
+
+Fields:
+
+- `id`
+- `postId`
+- `publicationId`
+- `deliveryId`
+- `attemptId`
+- `platform`
+- `destination`
+- `remoteId`
+- `content`
+- `mediaUrl`
+- `requestPayload`
+- `responsePayload`
+- `publishedAt`
+- `createdAt`
+
+## 7. Reader Experience
+
+### Login
+
+Requirements:
+
+- Username-or-email/password form.
+- Field errors and form errors.
+- Loading state during authentication.
+- Calls `POST /auth/login` with credentials included.
+- Redirect readers to `/stories`.
+- Redirect admins to `/admin`.
+
+### Registration
+
+Requirements:
+
+- Username, email, password, and password-confirmation fields.
+- Do not render or send a role selector.
+- Calls `POST /auth/register` with credentials included.
+- Treat the returned reader as logged in and redirect to `/stories`.
+- Show duplicate-account and validation errors without exposing database details.
+- Keep a visible "Continue without account" path to `/stories`.
+
+### Story List
+
+Data source:
+
+- `GET /stories`
+- `GET /labels`
+
+Layout:
+
+- Dense news-feed layout optimized for scanning.
+- Filter bar with search, public labels, date range, and platform.
+- Story cards show title or text preview, labels, publication time, media thumbnail when present, and platform badges.
+
+Behavior:
+
+- Cursor pagination or infinite scroll.
+- Preserve filters in URL query params.
+- Empty state when no stories match filters.
+- Error state with retry.
+
+### Story Detail
+
+Data source:
+
+- `GET /stories/:storyId`
+
+Sections:
+
+- Title when present.
+- Story text.
+- Labels.
+- Published timestamp.
+- Media.
+- Platform links.
+- Correction link when `correctionOfPostId` is present.
+
+Rules:
+
+- Do not display audit records, delivery errors, internal validation notes, admin-only labels, request payloads, or response payloads.
+
+## 8. Admin Experience
+
+### Dashboard
+
+Widgets:
+
+- Manual review backlog.
+- Posts by status.
+- Failed or unknown deliveries.
+- Recent publications.
+- Recent platform posts.
+- Platform health/configuration notes.
+- Current five-minute ranked feed, urgent candidates, and suppressed duplicate/minor-update counts.
+
+Current data sources:
+
+- `GET /metrics`
+- `GET /review`
+- `GET /admin/posts`
+- `GET /admin/deliveries`
+- `GET /admin/publications`
+- `GET /admin/platform-posts`
+
+### Review Queue
+
+Data sources:
+
+- `GET /review`
+- `GET /events/:eventId`, when event detail is available from the job context
+- `GET /audit/:entityType/:entityId`
+
+Actions:
+
+- Approve: `POST /review/jobs/:jobId/approve`
+- Reject: `POST /review/jobs/:jobId/reject`
+- Requeue: `POST /review/jobs/:jobId/requeue`
+- Request correction: `POST /review/jobs/:jobId/request-correction`
+
+Requirements:
+
+- Always require a reason.
+- Always send `expectedVersion`.
+- On `409`, refresh the job and show a conflict message.
+
+### Posts Management
+
+Data sources:
+
+- `GET /admin/posts`
+- `GET /admin/posts/:postId`
+- `GET /admin/labels`
+
+Filters:
+
+- Status.
+- Kind.
+- Include archived.
+- Client-side label/platform/search filters may be used initially if backend filters are not available for those fields.
+
+Columns:
+
+- Title or preview.
+- Status.
+- Labels.
+- Kind.
+- Published at.
+- Created by.
+- Actions.
+
+Actions:
+
+- View.
+- Edit if status is mutable.
+- Archive if unpublished.
+- Publish.
+- Create correction for published posts.
+- Open publication detail.
+
+### Create Custom Post
+
+Data source:
+
+- `POST /admin/posts`
+
+Fields:
+
+- Title.
+- Text.
+- Labels.
+- Optional event ID.
+
+Backend behavior:
+
+- Creates `CUSTOM` post in `DRAFT`.
+
+Publication:
+
+- Use `POST /admin/posts/:postId/publish` with destination list.
+
+### Edit Post
+
+Data source:
+
+- `PATCH /admin/posts/:postId`
+
+Editable statuses:
+
+- `DRAFT`
+- `MANUAL_REVIEW`
+- `REJECTED`
+- `VALIDATED`
+
+Non-editable:
+
+- `PUBLISHED`
+
+Fields:
+
+- Title.
+- Text.
+- Labels.
+- Event ID.
+
+### Archive Post
+
+Data source:
+
+- `DELETE /admin/posts/:postId`
+
+Rules:
+
+- Only unpublished posts.
+- Use confirmation modal.
+- Show exact object being archived.
+
+### Publish Post
+
+Data source:
+
+- `POST /admin/posts/:postId/publish`
+
+Fields:
+
+- Destination rows with platform and destination.
+
+Requirements:
+
+- At least one destination.
+- Show generated publication/deliveries after success.
+- Disable publish for already published posts.
+
+### Corrections
+
+Data source:
+
+- `POST /admin/posts/:postId/corrections`
+
+Rules:
+
+- Source post must be published.
+- Correction starts as a draft.
+- Original post remains immutable.
+
+### Labels Management
+
+Data sources:
+
+- `GET /admin/labels`
+- `POST /admin/labels`
+- `PATCH /admin/labels/:labelId`
+- `DELETE /admin/labels/:labelId`
+
+List fields:
+
+- Name.
+- Slug.
+- Color.
+- Visibility.
+- Archived state.
+- Created/updated timestamps.
+
+Rules:
+
+- Public labels appear in reader filters.
+- Admin-only labels are hidden from reader views.
+- Delete is soft archive.
+
+## 9. Publications, Deliveries, Instagram, and X
+
+### Publication List and Detail
+
+Data sources:
+
+- `GET /admin/publications`
+- `GET /admin/publications/:publicationId`
+
+Show:
+
+- Publication ID.
+- Source post.
+- Revision.
+- Created timestamp.
+- Delivery rows.
+
+### Delivery List and Detail
+
+Data sources:
+
+- `GET /admin/deliveries`
+- `GET /admin/deliveries/:deliveryId`
+
+Show:
+
+- Platform.
+- Destination.
+- Status.
+- Attempt count.
+- Last error.
+- Sent timestamp.
+- Attempts with outcome, remote ID, status code, error message, request payload, response payload, and timestamp.
+
+Actions:
+
+- Retry failed/retryable delivery.
+- Reconcile unknown delivery.
+
+State rules:
+
+- Retry only for `FAILED` or `RETRY`.
+- Reconcile only for `UNKNOWN`.
+
+### Instagram Management
+
+Route:
+
+- `/admin/platforms/instagram`
+
+Data sources:
+
+- `GET /admin/platform-posts?platform=instagram`
+- `GET /admin/deliveries?platform=instagram`
+
+Show:
+
+- Recent Instagram platform posts.
+- Failed/unknown Instagram deliveries.
+- Destination account.
+- Remote ID.
+- Caption/content.
+- Media URL.
+- Source post and publication.
+- Attempts and errors via delivery detail.
+
+### X Management
+
+Route:
+
+- `/admin/platforms/x`
+
+Data sources:
+
+- `GET /admin/platform-posts?platform=x`
+- `GET /admin/deliveries?platform=x`
+
+Show:
+
+- Recent X platform posts.
+- Failed/unknown X deliveries.
+- Destination account.
+- Remote tweet ID.
+- Tweet/content text.
+- Source post and publication.
+- Attempts and errors via delivery detail.
+
+### Platform Post Detail
+
+Data source:
+
+- `GET /admin/platform-posts/:platformPostId`
+
+Show:
+
+- Platform post record.
+- Source post.
+- Publication.
+- Delivery.
+
+Rules:
+
+- Do not provide edit/delete controls for platform posts in this MVP.
+- Retrying and reconciliation happen through delivery endpoints.
+
+## 10. UI States and Error Handling
+
+Every data view must implement:
+
+- Loading state.
+- Empty state.
+- Error state with retry.
+- Unauthorized state.
+- Forbidden state.
+- Stale-write conflict state where mutations use versions.
+
+Mutation behavior:
+
+- Disable submit while request is in flight.
+- Show success/failure toast.
+- Refresh affected list/detail queries after success.
+- Preserve entered form data on validation failure.
+- Show backend `requestId` in admin error details.
+
+Request behavior:
+
+- Set `credentials: "include"` for session routes.
+- Send `content-type: application/json` for JSON mutations.
+- Respect the 64 KiB request body limit.
+- Use cursor pagination helpers for list pages.
+
+## 11. Design System Direction
+
+Style:
+
+- Admin UI should be compact, operational, and optimized for repeated work.
+- Reader UI should be clean and news-focused, with fast scanning.
+- Avoid marketing-style hero pages for the app shell.
+
+Core components:
+
+- App shell.
+- Sidebar navigation for admin.
+- Top bar with account menu.
+- Data table.
+- Filter bar.
+- Status badges.
+- Label chips.
+- Platform badges.
+- Confirmation modal.
+- Audit timeline.
+- Post editor.
+- Destination picker.
+- Delivery attempts table.
+- Media preview.
+- Toast notifications.
+
+Recommended icons:
+
+- Review/approve: check icon.
+- Reject/delete/archive: x or trash/archive icon.
+- Edit: pencil icon.
+- Publish/send: send icon.
+- Retry: rotate/refresh icon.
+- Audit/history: clock icon.
+- Instagram/X: platform icons or text badges where brand-icon licensing is not available.
+
+## 12. Frontend Architecture
+
+Recommended stack:
+
+- React with TypeScript.
+- Router with guarded routes.
+- TanStack Query or equivalent for server state.
+- OpenAPI-generated types or local runtime schemas for API validation.
+- Component-level form validation.
+- HTTP-only cookie auth.
+
+State ownership:
+
+- Server owns stories, posts, reviews, labels, publications, deliveries, platform posts, and audit data.
+- Client owns filters, form drafts, modals, optimistic UI state, and editor dirty state.
+
+API client:
+
+- Central request wrapper.
+- `credentials: "include"` by default.
+- Automatic `401` handling.
+- Typed error mapping.
+- Request ID capture.
+- Cursor pagination helpers.
+
+## 13. Acceptance Criteria
+
+Reader:
+
+- A reader can log in, see only published stories, filter by public labels, and open story details.
+- A reader can log out.
+- A reader cannot access admin routes.
+- A reader never sees admin-only labels, validation failures, audit records, job payloads, delivery errors, or internal platform payloads.
+
+Admin:
+
+- An admin can log in and see dashboard, review queue, posts, labels, publications, deliveries, Instagram, and X sections.
+- An admin can approve, reject, requeue, or request correction for review jobs with a required reason and expected version.
+- An admin can create a custom labeled post as draft.
+- An admin can edit mutable posts.
+- An admin cannot edit published posts.
+- An admin can archive only unpublished posts.
+- An admin can publish a post to selected destinations.
+- An admin can create correction drafts for published posts without mutating originals.
+- An admin can create, edit, and archive labels.
+- An admin can inspect publications, deliveries, attempts, platform posts, remote IDs, errors, and payloads.
+- An admin can retry eligible failed/retry deliveries and reconcile unknown deliveries.
+- An admin can inspect explainable ranking scores, manage important/trending topic rules, reassess items, and promote or suppress decisions with an audit reason.
+
+Platform:
+
+- Failed or unknown Instagram/X deliveries are visible.
+- Retry/reconciliation actions are exposed only when backend supports the transition.
+- Published platform post records link back to their News Master post, publication, delivery, and audit history.
+- Platform post edit/delete controls are absent in this MVP.
+
+## 14. Implementation Phases
+
+### Phase 1: Frontend Foundation
+
+- Add React/TypeScript frontend app.
+- Implement app shell, routing, login/registration screens, API client, and admin-only route guards.
+- Integrate `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, and `GET /auth/me`.
+- Keep story, story-detail, and public-label routes available when `/auth/me` returns `user: null`.
+
+### Phase 2: Reader Stories
+
+- Add story list and detail pages.
+- Add public labels and filters.
+- Use only reader-safe story projection APIs.
+
+### Phase 3: Admin Review
+
+- Add admin dashboard.
+- Add review queue.
+- Add approve/reject/requeue/request-correction flows with version conflict handling.
+
+### Phase 4: Posts and Labels
+
+- Add admin post list/detail/editor.
+- Add custom post creation.
+- Add publish and correction flows.
+- Add labels management.
+
+### Phase 5: Publications and Social Management
+
+- Add publication and delivery pages.
+- Add Instagram and X management screens.
+- Add retry and reconciliation flows.
+- Add platform-post detail views.
+
+### Phase 6: Hardening
+
+- Add end-to-end tests for reader login, story browsing, admin review, custom post creation, editing, archive, publish, corrections, labels, and delivery management.
+- Add accessibility checks.
+- Add audit/error request ID visibility.
+- Add role/permission test coverage.
+
+## 15. Five-Minute Ranking and Urgent Publishing
+
+### Admin Routes
+
+- `/admin/ranking`: ranked five-minute feed.
+- `/admin/ranking/:assessmentId`: assessment evidence and score explanation.
+- `/admin/topic-rules`: important and trending topic management.
+- `/admin/urgent`: urgent candidates, shadow decisions, blockers, and recent automatic posts.
+
+### Ranked Feed
+
+Use `GET /admin/ranking` with optional `bucket`, `category`, `tier`, `novelty`, `status`, and `limit` filters.
+
+Each row shows:
+
+- Primary category and up to three secondary topics.
+- `NEW_EVENT`, `MATERIAL_UPDATE`, `MINOR_UPDATE`, or `DUPLICATE` development type.
+- Importance score and `URGENT`, `HIGH`, `STANDARD`, `LOW`, or `SUPPRESSED` tier.
+- Source count, first-seen time, matched topic rules, publication status, and concise ranking reasons.
+- An urgent indicator only when every hard gate passes.
+
+Keep the feed dense and optimized for comparison. Use category/tier filters as menus, novelty as a segmented control, and clear icons for reassess, promote, suppress, inspect, and publish. Duplicate and minor updates remain inspectable but are visually de-emphasized.
+
+### Assessment Detail
+
+Use `GET /admin/ranking/:assessmentId`.
+
+Show the six unboosted score components separately:
+
+- Consequence: 0–30
+- Novelty: 0–25
+- Source authority: 0–15
+- Recency: 0–15
+- Cross-source velocity: 0–10
+- India relevance: 0–5
+
+Also show the topic boost, final score, policy/model version, development fingerprint, supporting article, evidence metadata, matched rules, urgent blockers, and sensitive flags. Internal score details are admin-only.
+
+Actions require a reason:
+
+- `POST /admin/ranking/:assessmentId/reassess`
+- `POST /admin/ranking/:assessmentId/promote`
+- `POST /admin/ranking/:assessmentId/suppress`
+
+Refresh the assessment after a mutation. A reassessment response means work was queued and should display a pending state until the new active assessment appears.
+
+### Topic Rules
+
+Use:
+
+- `GET /admin/topic-rules`
+- `POST /admin/topic-rules`
+- `PATCH /admin/topic-rules/:ruleId`
+- `DELETE /admin/topic-rules/:ruleId`
+
+The editor includes stable key, display name, aliases, optional category, `BOOST`/`PIN`/`SUPPRESS` mode, boost from 1–20 for `BOOST`, optional active dates, urgent eligibility, and required reason.
+
+Environment rules display an `ENV` source marker and are read-only. Admin rules can override the same stable key and can be edited or archived. The UI must not imply that multiple boosts stack.
+
+### Urgent Queue and Shadow Mode
+
+Urgent candidates show score, age, source sufficiency, confidence, graphic readiness, cooldowns, daily-cap usage, sensitive-content blockers, and whether the decision is `WOULD_PUBLISH`, `PUBLISHED`, `REVIEW_REQUIRED`, or `BLOCKED`.
+
+In shadow mode, show the AI recommendation beside the eventual admin decision. Never describe a shadow decision as published. Enabled mode remains visibly distinct and must show the six-per-day cap, 15-minute global cooldown, four-hour event cooldown, and seven-day shadow prerequisite.
+
+The frontend does not bypass backend gates. Manual publish continues through the existing post publication endpoint and direct urgent Instagram publication continues through the publication outbox.

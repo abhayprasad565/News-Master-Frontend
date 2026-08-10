@@ -3,20 +3,44 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: News Master API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: stories
+    description: Reader story browsing
+  - name: labels
+    description: Public label browsing
+  - name: adminLabels
+    description: Admin label management
+  - name: adminPosts
+    description: Admin post management
+  - name: review
+    description: Manual review queue
+  - name: events
+    description: Event detail and editorial topics
+  - name: audit
+    description: Audit timeline
+  - name: publications
+    description: Publication records
+  - name: deliveries
+    description: Delivery records
+  - name: platformPosts
+    description: Platform post records
+  - name: metrics
+    description: Metrics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +48,1682 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session user
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+
+  /metrics:
+    get:
+      operationId: getMetrics
+      tags: [metrics]
+      summary: Get Prometheus metrics
+      responses:
+        "200":
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /stories:
+    get:
+      operationId: getStories
+      tags: [stories]
+      summary: List published stories
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: label
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: platform
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: from
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: to
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Story list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryList"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /stories/{storyId}:
+    get:
+      operationId: getStory
+      tags: [stories]
+      summary: Get a single published story
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /labels:
+    get:
+      operationId: getPublicLabels
+      tags: [labels]
+      summary: List public labels
+      responses:
+        "200":
+          description: Label list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabelList"
+
+  /admin/labels:
+    get:
+      operationId: getAdminLabels
+      tags: [adminLabels]
+      summary: List all labels (admin)
+      responses:
+        "200":
+          description: Admin label list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLabelList"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createLabel
+      tags: [adminLabels]
+      summary: Create a label
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelInput"
+      responses:
+        "201":
+          description: Created label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Label"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/labels/{labelId}:
+    patch:
+      operationId: updateLabel
+      tags: [adminLabels]
+      summary: Update a label
+      parameters:
+        - name: labelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LabelUpdate"
+      responses:
+        "200":
+          description: Updated label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Label"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteLabel
+      tags: [adminLabels]
+      summary: Archive a label
+      parameters:
+        - name: labelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/posts:
+    get:
+      operationId: getAdminPosts
+      tags: [adminPosts]
+      summary: List posts (admin)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: kind
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: includeArchived
+          in: query
+          schema:
+            type: ["boolean", "null"]
+      responses:
+        "200":
+          description: Post list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPostList"
+    post:
+      operationId: createPost
+      tags: [adminPosts]
+      summary: Create a custom post in DRAFT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPost"
+
+  /admin/posts/{postId}:
+    get:
+      operationId: getAdminPost
+      tags: [adminPosts]
+      summary: Get a post (admin)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPostDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updatePost
+      tags: [adminPosts]
+      summary: Edit a mutable post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostUpdate"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPost"
+    delete:
+      operationId: deletePost
+      tags: [adminPosts]
+      summary: Archive an unpublished post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /admin/posts/{postId}/publish:
+    post:
+      operationId: publishPost
+      tags: [adminPosts]
+      summary: Publish a post to destinations
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishInput"
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/posts/{postId}/corrections:
+    post:
+      operationId: createCorrection
+      tags: [adminPosts]
+      summary: Create a correction draft for a published post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionInput"
+      responses:
+        "201":
+          description: Correction draft created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPost"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /review:
+    get:
+      operationId: getReviewQueue
+      tags: [review]
+      summary: List manual-review jobs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Review queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewJobList"
+
+  /review/jobs/{jobId}/approve:
+    post:
+      operationId: approveReviewJob
+      tags: [review]
+      summary: Approve a review job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewActionInput"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /review/jobs/{jobId}/reject:
+    post:
+      operationId: rejectReviewJob
+      tags: [review]
+      summary: Reject a review job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewActionInput"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /review/jobs/{jobId}/requeue:
+    post:
+      operationId: requeueReviewJob
+      tags: [review]
+      summary: Requeue a review job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewActionInput"
+      responses:
+        "200":
+          description: Requeued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /review/jobs/{jobId}/request-correction:
+    post:
+      operationId: requestCorrectionReviewJob
+      tags: [review]
+      summary: Request correction for a review job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewActionInput"
+      responses:
+        "200":
+          description: Correction requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get event detail
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /editorial/events/{eventId}/topics:
+    get:
+      operationId: getEventTopics
+      tags: [events]
+      summary: Get editorial topic signals for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Topic signals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopicList"
+
+  /editorial/topics/{topicId}/override:
+    put:
+      operationId: overrideTopic
+      tags: [events]
+      summary: Override an editorial topic
+      parameters:
+        - name: topicId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopicOverrideInput"
+      responses:
+        "200":
+          description: Override applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /audit/{entityType}/{entityId}:
+    get:
+      operationId: getAuditTimeline
+      tags: [audit]
+      summary: Get audit timeline for an entity
+      parameters:
+        - name: entityType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditList"
+
+  /admin/publications:
+    get:
+      operationId: getPublications
+      tags: [publications]
+      summary: List publications
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Publication list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationList"
+
+  /admin/publications/{publicationId}:
+    get:
+      operationId: getPublication
+      tags: [publications]
+      summary: Get a publication
+      parameters:
+        - name: publicationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Publication detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicationDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/deliveries:
+    get:
+      operationId: getDeliveries
+      tags: [deliveries]
+      summary: List deliveries
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: platform
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Delivery list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryList"
+
+  /admin/deliveries/{deliveryId}:
+    get:
+      operationId: getDelivery
+      tags: [deliveries]
+      summary: Get a delivery
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Delivery detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/deliveries/{deliveryId}/retry:
+    post:
+      operationId: retryDelivery
+      tags: [deliveries]
+      summary: Retry a failed delivery
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetryInput"
+      responses:
+        "200":
+          description: Retry queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/deliveries/{deliveryId}/reconcile:
+    post:
+      operationId: reconcileDelivery
+      tags: [deliveries]
+      summary: Reconcile an unknown delivery
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileInput"
+      responses:
+        "200":
+          description: Reconciled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/platform-posts:
+    get:
+      operationId: getPlatformPosts
+      tags: [platformPosts]
+      summary: List platform posts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: cursor
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: platform
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Platform post list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformPostList"
+
+  /admin/platform-posts/{platformPostId}:
+    get:
+      operationId: getPlatformPost
+      tags: [platformPosts]
+      summary: Get a platform post
+      parameters:
+        - name: platformPostId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Platform post detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformPostDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
 components:
   schemas:
+    JsonObject:
+      type: object
+      additionalProperties: true
+
     HealthStatus:
       type: object
       properties:
         status:
           type: string
+        role:
+          type: ["string", "null"]
+        dependencies:
+          type: object
+          properties:
+            database:
+              type: ["string", "null"]
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        requestId:
+          type: ["string", "null"]
+        details:
+          type: ["object", "null"]
+      required:
+        - error
+        - message
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    UserSession:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, reader]
+      required:
+        - email
+        - role
+
+    AuthUser:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSession"
+      required:
+        - user
+
+    MeResponse:
+      type: object
+      properties:
+        user:
+          type: ["object", "null"]
+          properties:
+            email:
+              type: string
+            role:
+              type: string
+              enum: [admin, reader]
+      required:
+        - user
+
+    MetricsResponse:
+      type: object
+      properties:
+        prometheus:
+          type: string
+      required:
+        - prometheus
+
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        color:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, ADMIN_ONLY]
+        archivedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+        - color
+        - visibility
+        - createdAt
+        - updatedAt
+
+    LabelInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        visibility:
+          type: ["string", "null"]
+          enum: [PUBLIC, ADMIN_ONLY, null]
+
+    LabelUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        slug:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        color:
+          type: ["string", "null"]
+        visibility:
+          type: ["string", "null"]
+          enum: [PUBLIC, ADMIN_ONLY, null]
+
+    LabelList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+      required:
+        - items
+
+    AdminLabelList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+      required:
+        - items
+
+    PlatformLink:
+      type: object
+      properties:
+        platform:
+          type: string
+        destination:
+          type: ["string", "null"]
+        remoteId:
+          type: ["string", "null"]
+      required:
+        - platform
+
+    StoryMedia:
+      type: object
+      properties:
+        url:
+          type: string
+        type:
+          type: ["string", "null"]
+      required:
+        - url
+
+    Story:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [ORIGINAL, CORRECTION, CUSTOM]
+        title:
+          type: ["string", "null"]
+        text:
+          type: string
+        labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+        publishedAt:
+          type: ["string", "null"]
+        media:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryMedia"
+        platformLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformLink"
+        correctionOfPostId:
+          type: ["string", "null"]
+      required:
+        - id
+        - kind
+        - text
+        - labels
+        - media
+        - platformLinks
+
+    StoryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    AdminPost:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [ORIGINAL, CORRECTION, CUSTOM]
+        status:
+          type: string
+          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+        title:
+          type: ["string", "null"]
+        text:
+          type: string
+        labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+        validationReason:
+          type: ["string", "null"]
+        correctionOfPostId:
+          type: ["string", "null"]
+        replacementFactIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        createdBy:
+          type: ["string", "null"]
+        updatedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        publishedAt:
+          type: ["string", "null"]
+        archivedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - kind
+        - status
+        - text
+        - labels
+        - createdAt
+
+    AdminPostList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminPost"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    Publication:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+        revision:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - postId
+        - revision
+        - createdAt
+
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+        publicationId:
+          type: string
+        platform:
+          type: string
+        destination:
+          type: ["string", "null"]
+        idempotencyKey:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [PENDING, SENDING, SENT, RETRY, FAILED, UNKNOWN]
+        attemptCount:
+          type: number
+        lastError:
+          type: ["string", "null"]
+        sentAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - publicationId
+        - platform
+        - status
+        - attemptCount
+
+    AdminPostDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [ORIGINAL, CORRECTION, CUSTOM]
+        status:
+          type: string
+          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+        title:
+          type: ["string", "null"]
+        text:
+          type: string
+        labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+        validationReason:
+          type: ["string", "null"]
+        correctionOfPostId:
+          type: ["string", "null"]
+        replacementFactIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        createdBy:
+          type: ["string", "null"]
+        updatedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        publishedAt:
+          type: ["string", "null"]
+        archivedAt:
+          type: ["string", "null"]
+        sourceImageKey:
+          type: ["string", "null"]
+        publication:
+          $ref: "#/components/schemas/Publication"
+        deliveries:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/Delivery"
+      required:
+        - id
+        - kind
+        - status
+        - text
+        - labels
+        - createdAt
+
+    PostInput:
+      type: object
+      required: [text]
+      properties:
+        title:
+          type: ["string", "null"]
+        text:
+          type: string
+        eventId:
+          type: ["string", "null"]
+        labelIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        imageBase64:
+          type: ["string", "null"]
+          maxLength: 10485760
+
+    PostUpdate:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        text:
+          type: ["string", "null"]
+        eventId:
+          type: ["string", "null"]
+        labelIds:
+          type: ["array", "null"]
+          items:
+            type: string
+        imageBase64:
+          type: ["string", "null"]
+          maxLength: 10485760
+
+    Destination:
+      type: object
+      required: [platform, destination]
+      properties:
+        platform:
+          type: string
+          enum: [telegram, instagram, x, webhook, whatsapp]
+        destination:
+          type: string
+
+    PublishInput:
+      type: object
+      required: [destinations]
+      properties:
+        destinations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+
+    CorrectionInput:
+      type: object
+      required: [text]
+      properties:
+        title:
+          type: ["string", "null"]
+        text:
+          type: string
+        labelIds:
+          type: ["array", "null"]
+          items:
+            type: string
+
+    ReviewJob:
+      type: object
+      properties:
+        id:
+          type: string
+        version:
+          type: number
+        status:
+          type: string
+        postId:
+          type: ["string", "null"]
+        eventId:
+          type: ["string", "null"]
+        payload:
+          $ref: "#/components/schemas/JsonObject"
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - version
+        - status
+        - createdAt
+
+    ReviewJobList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewJob"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    ReviewActionInput:
+      type: object
+      required: [version, action, reason, expectedVersion]
+      properties:
+        version:
+          type: number
+          const: 1
+        action:
+          type: string
+          enum: [APPROVE, REJECT, REQUEUE, REQUEST_CORRECTION]
+        reason:
+          type: string
+        expectedVersion:
+          type: number
+
+    EventDetail:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/JsonObject"
+        claims:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/JsonObject"
+        claimEvidence:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/JsonObject"
+        facts:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/JsonObject"
+        post:
+          $ref: "#/components/schemas/AdminPost"
+        publication:
+          $ref: "#/components/schemas/Publication"
+        deliveries:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/Delivery"
+      required: []
+
+    TopicSignal:
+      type: object
+      properties:
+        id:
+          type: string
+        mode:
+          type: ["string", "null"]
+        boost:
+          type: ["number", "null"]
+        reason:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+      required:
+        - id
+
+    TopicList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopicSignal"
+      required:
+        - items
+
+    TopicOverrideInput:
+      type: object
+      required: [version, mode, reason]
+      properties:
+        version:
+          type: number
+        mode:
+          type: string
+          enum: [BOOST, PIN, SUPPRESS]
+        boost:
+          type: ["number", "null"]
+        reason:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        action:
+          type: string
+        actor:
+          type: ["string", "null"]
+        payload:
+          $ref: "#/components/schemas/JsonObject"
+        createdAt:
+          type: string
+      required:
+        - id
+        - entityType
+        - entityId
+        - action
+        - createdAt
+
+    AuditList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    PublicationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Publication"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    PublicationDetail:
+      type: object
+      properties:
+        publication:
+          $ref: "#/components/schemas/Publication"
+        post:
+          $ref: "#/components/schemas/AdminPost"
+        deliveries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Delivery"
+      required:
+        - publication
+
+    DeliveryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Delivery"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    DeliveryAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+        deliveryId:
+          type: string
+        attemptNumber:
+          type: number
+        outcome:
+          type: ["string", "null"]
+        remoteId:
+          type: ["string", "null"]
+        statusCode:
+          type: ["number", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        requestPayload:
+          $ref: "#/components/schemas/JsonObject"
+        responsePayload:
+          $ref: "#/components/schemas/JsonObject"
+        createdAt:
+          type: string
+      required:
+        - id
+        - deliveryId
+        - attemptNumber
+        - createdAt
+
+    DeliveryDetail:
+      type: object
+      properties:
+        delivery:
+          $ref: "#/components/schemas/Delivery"
+        publication:
+          $ref: "#/components/schemas/Publication"
+        post:
+          $ref: "#/components/schemas/AdminPost"
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeliveryAttempt"
+      required:
+        - delivery
+
+    RetryInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    ReconcileInput:
+      type: object
+      required: [outcome, reason]
+      properties:
+        outcome:
+          type: string
+          enum: [SENT, NOT_SENT, FAILED]
+        reason:
+          type: string
+
+    PlatformPost:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: ["string", "null"]
+        publicationId:
+          type: ["string", "null"]
+        deliveryId:
+          type: ["string", "null"]
+        attemptId:
+          type: ["string", "null"]
+        platform:
+          type: string
+        destination:
+          type: ["string", "null"]
+        remoteId:
+          type: ["string", "null"]
+        content:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        requestPayload:
+          $ref: "#/components/schemas/JsonObject"
+        responsePayload:
+          $ref: "#/components/schemas/JsonObject"
+        publishedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - platform
+        - createdAt
+
+    PlatformPostList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformPost"
+        nextCursor:
+          type: ["string", "null"]
+      required:
+        - items
+
+    PlatformPostDetail:
+      type: object
+      properties:
+        platformPost:
+          $ref: "#/components/schemas/PlatformPost"
+        post:
+          $ref: "#/components/schemas/AdminPost"
+        publication:
+          $ref: "#/components/schemas/Publication"
+        delivery:
+          $ref: "#/components/schemas/Delivery"
+      required:
+        - platformPost
