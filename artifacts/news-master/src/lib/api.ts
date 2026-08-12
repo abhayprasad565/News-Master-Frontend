@@ -3,9 +3,14 @@ export class FrontendApiError extends Error {
   requestId?: string;
   details?: unknown;
 
-  constructor(message: string, status: number, requestId?: string, details?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    requestId?: string,
+    details?: unknown,
+  ) {
     super(message);
-    this.name = 'FrontendApiError';
+    this.name = "FrontendApiError";
     this.status = status;
     this.requestId = requestId;
     this.details = details;
@@ -13,16 +18,23 @@ export class FrontendApiError extends Error {
 }
 
 type RequestOptions = RequestInit & {
-  responseType?: 'json' | 'text';
+  responseType?: "json" | "text";
 };
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { responseType = 'json', headers, ...init } = options;
+export async function apiFetch<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const { responseType = "json", headers, ...init } = options;
+  const hasFormDataBody =
+    typeof FormData !== "undefined" && init.body instanceof FormData;
   const response = await fetch(path, {
-    credentials: 'include',
+    credentials: "include",
     ...init,
     headers: {
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
+      ...(init.body && !hasFormDataBody
+        ? { "content-type": "application/json" }
+        : {}),
       ...headers,
     },
   });
@@ -31,16 +43,19 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const data = text ? parseBody(text) : null;
 
   if (!response.ok) {
-    const body = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+    const body =
+      data && typeof data === "object" ? (data as Record<string, unknown>) : {};
     throw new FrontendApiError(
-      String(body.message || body.error || response.statusText || 'Request failed'),
+      String(
+        body.message || body.error || response.statusText || "Request failed",
+      ),
       response.status,
-      typeof body.requestId === 'string' ? body.requestId : undefined,
+      typeof body.requestId === "string" ? body.requestId : undefined,
       body.details,
     );
   }
 
-  return (responseType === 'text' ? text : data) as T;
+  return (responseType === "text" ? text : data) as T;
 }
 
 function parseBody(text: string): unknown {
@@ -51,11 +66,13 @@ function parseBody(text: string): unknown {
   }
 }
 
-export function toQuery(params: Record<string, string | number | boolean | undefined>) {
+export function toQuery(
+  params: Record<string, string | number | boolean | undefined>,
+) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') query.set(key, String(value));
+    if (value !== undefined && value !== "") query.set(key, String(value));
   });
   const stringified = query.toString();
-  return stringified ? `?${stringified}` : '';
+  return stringified ? `?${stringified}` : "";
 }

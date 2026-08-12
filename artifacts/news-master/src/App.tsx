@@ -1,38 +1,41 @@
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { ReaderLayout } from '@/components/layout/ReaderLayout';
-import { Route, Switch, Router as WouterRouter, Redirect } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import NotFound from '@/pages/not-found';
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { ReaderLayout } from "@/components/layout/ReaderLayout";
+import { Route, Switch, Router as WouterRouter, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
 
-import Login from '@/pages/login';
-import Register from '@/pages/register';
-import Account from '@/pages/account';
-import StoriesList from '@/pages/reader/stories';
-import StoryDetail from '@/pages/reader/story-detail';
+import Login from "@/pages/login";
+import Register from "@/pages/register";
+import Account from "@/pages/account";
+import StoriesList from "@/pages/reader/stories";
+import StoryDetail from "@/pages/reader/story-detail";
+import MarriageInvitation from "@/pages/marriage-invitation";
 
-import AdminDashboard from '@/pages/admin/dashboard';
-import AdminReviewQueue from '@/pages/admin/review-queue';
-import AdminPostList from '@/pages/admin/post-list';
-import AdminPostDetail from '@/pages/admin/post-detail';
-import AdminCreatePost from '@/pages/admin/post-create';
-import AdminEditPost from '@/pages/admin/post-edit';
-import AdminPublicationList from '@/pages/admin/publication-list';
-import AdminPublicationDetail from '@/pages/admin/publication-detail';
-import AdminDeliveryList from '@/pages/admin/delivery-list';
-import AdminDeliveryDetail from '@/pages/admin/delivery-detail';
-import AdminLabelList from '@/pages/admin/label-list';
-import AdminInstagram from '@/pages/admin/instagram';
-import AdminX from '@/pages/admin/x';
-import AdminPlatformPostDetail from '@/pages/admin/platform-post-detail';
-import AdminSettings from '@/pages/admin/settings';
-import AdminAuditTimeline from '@/pages/admin/audit-timeline';
-import AdminRanking from '@/pages/admin/ranking';
-import AdminRankingDetail from '@/pages/admin/ranking-detail';
-import AdminTopicRules from '@/pages/admin/topic-rules';
-import AdminUrgent from '@/pages/admin/urgent';
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminReviewQueue from "@/pages/admin/review-queue";
+import AdminPostList from "@/pages/admin/post-list";
+import AdminPostDetail from "@/pages/admin/post-detail";
+import AdminCreatePost from "@/pages/admin/post-create";
+import AdminEditPost from "@/pages/admin/post-edit";
+import AdminPublicationList from "@/pages/admin/publication-list";
+import AdminPublicationDetail from "@/pages/admin/publication-detail";
+import AdminDeliveryList from "@/pages/admin/delivery-list";
+import AdminDeliveryDetail from "@/pages/admin/delivery-detail";
+import AdminLabelList from "@/pages/admin/label-list";
+import AdminInstagram from "@/pages/admin/instagram";
+import AdminX from "@/pages/admin/x";
+import AdminPlatformPostDetail from "@/pages/admin/platform-post-detail";
+import AdminSettings from "@/pages/admin/settings";
+import AdminAuditTimeline from "@/pages/admin/audit-timeline";
+import AdminRanking from "@/pages/admin/ranking";
+import AdminRankingDetail from "@/pages/admin/ranking-detail";
+import AdminTopicRules from "@/pages/admin/topic-rules";
+import AdminUrgent from "@/pages/admin/urgent";
+import AdminAutopilot from "@/pages/admin/autopilot";
+import AdminAudioLibrary from "@/pages/admin/audio-library";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,8 +54,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Switch>
+            <Route path="/marriage-invitation" component={MarriageInvitation} />
             <Route path="/login" component={Login} />
             <Route path="/admin/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -111,6 +115,20 @@ function App() {
               <ProtectedRoute requireRole="admin">
                 <AdminLayout>
                   <AdminUrgent />
+                </AdminLayout>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/autopilot">
+              <ProtectedRoute requireRole="admin">
+                <AdminLayout>
+                  <AdminAutopilot />
+                </AdminLayout>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/audio">
+              <ProtectedRoute requireRole="admin">
+                <AdminLayout>
+                  <AdminAudioLibrary />
                 </AdminLayout>
               </ProtectedRoute>
             </Route>
