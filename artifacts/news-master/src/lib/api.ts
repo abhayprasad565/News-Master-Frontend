@@ -19,24 +19,50 @@ export class FrontendApiError extends Error {
 
 type RequestOptions = RequestInit & {
   responseType?: "json" | "text";
+  csrf?: boolean | string;
 };
+
+const CSRF_STORAGE_KEY = "scrollbrief.csrf";
+
+export function setCsrfToken(token: string | null): void {
+  if (token) sessionStorage.setItem(CSRF_STORAGE_KEY, token);
+  else sessionStorage.removeItem(CSRF_STORAGE_KEY);
+}
+
+async function csrfToken(): Promise<string> {
+  const cached = sessionStorage.getItem(CSRF_STORAGE_KEY);
+  if (cached) return cached;
+  const response = await fetch("/api/auth/csrf", { credentials: "include" });
+  if (!response.ok)
+    throw new FrontendApiError("Authentication required", response.status);
+  const data = (await response.json()) as { csrfToken: string };
+  setCsrfToken(data.csrfToken);
+  return data.csrfToken;
+}
 
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { responseType = "json", headers, ...init } = options;
+  const { responseType = "json", csrf = true, headers, ...init } = options;
   const hasFormDataBody =
     typeof FormData !== "undefined" && init.body instanceof FormData;
+  const method = (init.method ?? "GET").toUpperCase();
+  const mutating = !["GET", "HEAD", "OPTIONS"].includes(method);
+  const requestHeaders = new Headers(headers);
+  if (init.body && !hasFormDataBody && !requestHeaders.has("content-type")) {
+    requestHeaders.set("content-type", "application/json");
+  }
+  if (mutating && csrf) {
+    requestHeaders.set(
+      "x-csrf-token",
+      typeof csrf === "string" ? csrf : await csrfToken(),
+    );
+  }
   const response = await fetch(path, {
     credentials: "include",
     ...init,
-    headers: {
-      ...(init.body && !hasFormDataBody
-        ? { "content-type": "application/json" }
-        : {}),
-      ...headers,
-    },
+    headers: requestHeaders,
   });
 
   const text = await response.text();

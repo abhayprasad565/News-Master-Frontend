@@ -10,6 +10,8 @@ export type UserSessionRole = typeof UserSessionRole[keyof typeof UserSessionRol
 
 
 export const UserSessionRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;

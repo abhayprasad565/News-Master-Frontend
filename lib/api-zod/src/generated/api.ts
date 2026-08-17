@@ -31,7 +31,7 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   "user": zod.object({
   "email": zod.string(),
-  "role": zod.enum(['admin', 'reader'])
+  "role": zod.enum(['owner', 'admin', 'moderator', 'reader'])
 })
 })
 
@@ -50,7 +50,7 @@ export const LogoutResponse = zod.object({
 export const GetMeResponse = zod.object({
   "user": zod.object({
   "email": zod.string().optional(),
-  "role": zod.enum(['admin', 'reader']).optional()
+  "role": zod.enum(['owner', 'admin', 'moderator', 'reader']).optional()
 }).nullable()
 })
 
@@ -75,6 +75,12 @@ export const GetStoriesQueryParams = zod.object({
   "from": zod.coerce.string().nullish(),
   "to": zod.coerce.string().nullish()
 })
+
+export const getStoriesResponseItemsItemLikeCountMin = 0;
+
+export const getStoriesResponseItemsItemCommentCountMin = 0;
+
+
 
 export const GetStoriesResponse = zod.object({
   "items": zod.array(zod.object({
@@ -105,7 +111,11 @@ export const GetStoriesResponse = zod.object({
   "destination": zod.string().nullish(),
   "remoteId": zod.string().nullish()
 })),
-  "correctionOfPostId": zod.string().nullish()
+  "correctionOfPostId": zod.string().nullish(),
+  "likeCount": zod.number().min(getStoriesResponseItemsItemLikeCountMin),
+  "commentCount": zod.number().min(getStoriesResponseItemsItemCommentCountMin),
+  "likedByMe": zod.boolean(),
+  "savedByMe": zod.boolean()
 })),
   "nextCursor": zod.string().nullish()
 })
@@ -117,6 +127,12 @@ export const GetStoriesResponse = zod.object({
 export const GetStoryParams = zod.object({
   "storyId": zod.coerce.string()
 })
+
+export const getStoryResponseLikeCountMin = 0;
+
+export const getStoryResponseCommentCountMin = 0;
+
+
 
 export const GetStoryResponse = zod.object({
   "id": zod.string(),
@@ -146,7 +162,11 @@ export const GetStoryResponse = zod.object({
   "destination": zod.string().nullish(),
   "remoteId": zod.string().nullish()
 })),
-  "correctionOfPostId": zod.string().nullish()
+  "correctionOfPostId": zod.string().nullish(),
+  "likeCount": zod.number().min(getStoryResponseLikeCountMin),
+  "commentCount": zod.number().min(getStoryResponseCommentCountMin),
+  "likedByMe": zod.boolean(),
+  "savedByMe": zod.boolean()
 })
 
 

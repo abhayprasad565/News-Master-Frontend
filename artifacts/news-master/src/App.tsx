@@ -9,6 +9,10 @@ import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify-email";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
+import AdminInvitationAccept from "@/pages/admin-invitation-accept";
 import Account from "@/pages/account";
 import StoriesList from "@/pages/reader/stories";
 import StoryDetail from "@/pages/reader/story-detail";
@@ -61,6 +65,13 @@ function App() {
             <Route path="/login" component={Login} />
             <Route path="/admin/login" component={Login} />
             <Route path="/register" component={Register} />
+            <Route path="/verify-email" component={VerifyEmail} />
+            <Route path="/forgot-password" component={ForgotPassword} />
+            <Route path="/reset-password" component={ResetPassword} />
+            <Route
+              path="/admin/invitations/accept"
+              component={AdminInvitationAccept}
+            />
 
             {/* Reader Routes */}
             <Route path="/stories/:id">

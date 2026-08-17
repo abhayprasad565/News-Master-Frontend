@@ -993,7 +993,7 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, reader]
+          enum: [owner, admin, moderator, reader]
       required:
         - email
         - role
@@ -1016,7 +1016,7 @@ components:
               type: string
             role:
               type: string
-              enum: [admin, reader]
+              enum: [owner, admin, moderator, reader]
       required:
         - user
 
@@ -1165,6 +1165,16 @@ components:
             $ref: "#/components/schemas/PlatformLink"
         correctionOfPostId:
           type: ["string", "null"]
+        likeCount:
+          type: number
+          minimum: 0
+        commentCount:
+          type: number
+          minimum: 0
+        likedByMe:
+          type: boolean
+        savedByMe:
+          type: boolean
       required:
         - id
         - kind
@@ -1172,6 +1182,10 @@ components:
         - labels
         - media
         - platformLinks
+        - likeCount
+        - commentCount
+        - likedByMe
+        - savedByMe
 
     StoryList:
       type: object

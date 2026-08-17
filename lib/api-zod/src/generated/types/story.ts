@@ -25,4 +25,10 @@ export interface Story {
   platformLinks: PlatformLink[];
   /** @nullable */
   correctionOfPostId?: string | null;
+  /** @minimum 0 */
+  likeCount: number;
+  /** @minimum 0 */
+  commentCount: number;
+  likedByMe: boolean;
+  savedByMe: boolean;
 }

@@ -46,7 +46,9 @@ export type UserSessionRole = typeof UserSessionRole[keyof typeof UserSessionRol
 
 
 export const UserSessionRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;
 
@@ -63,7 +65,9 @@ export type MeResponseUserRole = typeof MeResponseUserRole[keyof typeof MeRespon
 
 
 export const MeResponseUserRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;
 
@@ -213,6 +217,12 @@ export interface Story {
   platformLinks: PlatformLink[];
   /** @nullable */
   correctionOfPostId?: string | null;
+  /** @minimum 0 */
+  likeCount: number;
+  /** @minimum 0 */
+  commentCount: number;
+  likedByMe: boolean;
+  savedByMe: boolean;
 }
 
 export interface StoryList {

@@ -1523,7 +1523,7 @@ export const getGetReviewQueueUrl = (params?: GetReviewQueueParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/review?${stringifiedParams}` : `/api/review`
+  return stringifiedParams.length > 0 ? `/api/admin/review?${stringifiedParams}` : `/api/admin/review`
 }
 
 /**
@@ -1546,7 +1546,7 @@ export const getReviewQueue = async (params?: GetReviewQueueParams, options?: Pa
 
 export const getGetReviewQueueQueryKey = (params?: GetReviewQueueParams,) => {
     return [
-    `/api/review`, ...(params ? [params] : [])
+    `/api/admin/review`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -1600,7 +1600,7 @@ export const getApproveReviewJobUrl = (jobId: string,) => {
 
 
 
-  return `/api/review/jobs/${jobId}/approve`
+  return `/api/admin/review/jobs/${jobId}/approve`
 }
 
 /**
@@ -1672,7 +1672,7 @@ export const getRejectReviewJobUrl = (jobId: string,) => {
 
 
 
-  return `/api/review/jobs/${jobId}/reject`
+  return `/api/admin/review/jobs/${jobId}/reject`
 }
 
 /**
@@ -1744,7 +1744,7 @@ export const getRequeueReviewJobUrl = (jobId: string,) => {
 
 
 
-  return `/api/review/jobs/${jobId}/requeue`
+  return `/api/admin/review/jobs/${jobId}/requeue`
 }
 
 /**
@@ -1816,7 +1816,7 @@ export const getRequestCorrectionReviewJobUrl = (jobId: string,) => {
 
 
 
-  return `/api/review/jobs/${jobId}/request-correction`
+  return `/api/admin/review/jobs/${jobId}/request-correction`
 }
 
 /**
@@ -2811,7 +2811,6 @@ export function useGetPlatformPost<TData = Awaited<ReturnType<typeof getPlatform
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
 
 
 
