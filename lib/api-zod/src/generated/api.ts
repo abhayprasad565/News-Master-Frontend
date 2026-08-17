@@ -311,7 +311,9 @@ export const CreatePostBody = zod.object({
   "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
   "audioStartSeconds": zod.number().nullish(),
   "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish()
+  "reelDurationSeconds": zod.number().nullish(),
+  "reelFadeInSeconds": zod.number().nullish(),
+  "reelFadeOutSeconds": zod.number().nullish()
 })
 
 export const CreatePostResponse = zod.object({
@@ -377,11 +379,14 @@ export const GetAdminPostResponse = zod.object({
   "publishedAt": zod.string().nullish(),
   "archivedAt": zod.string().nullish(),
   "sourceImageKey": zod.string().nullish(),
+  "graphicSourceMode": zod.enum(['AUTO', 'NO_SOURCE_IMAGE']).optional(),
   "audioTrackId": zod.string().nullish(),
   "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
   "audioStartSeconds": zod.number().nullish(),
   "audioVolume": zod.number().nullish(),
   "reelDurationSeconds": zod.number().nullish(),
+  "reelFadeInSeconds": zod.number().nullish(),
+  "reelFadeOutSeconds": zod.number().nullish(),
   "publication": zod.object({
   "id": zod.string(),
   "postId": zod.string(),
@@ -425,7 +430,9 @@ export const UpdatePostBody = zod.object({
   "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
   "audioStartSeconds": zod.number().nullish(),
   "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish()
+  "reelDurationSeconds": zod.number().nullish(),
+  "reelFadeInSeconds": zod.number().nullish(),
+  "reelFadeOutSeconds": zod.number().nullish()
 })
 
 export const UpdatePostResponse = zod.object({

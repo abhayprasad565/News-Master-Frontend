@@ -1197,7 +1197,8 @@ components:
           enum: [ORIGINAL, CORRECTION, CUSTOM]
         status:
           type: string
-          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+          enum:
+            [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
         title:
           type: ["string", "null"]
         text:
@@ -1276,7 +1277,19 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [PENDING, WAITING_FOR_ASSET, RENDERING, READY, SENDING, SENT, RETRY, FAILED, DEAD, UNKNOWN]
+          enum:
+            [
+              PENDING,
+              WAITING_FOR_ASSET,
+              RENDERING,
+              READY,
+              SENDING,
+              SENT,
+              RETRY,
+              FAILED,
+              DEAD,
+              UNKNOWN,
+            ]
         format:
           type: string
           enum: [IMAGE, REEL]
@@ -1306,7 +1319,8 @@ components:
           enum: [ORIGINAL, CORRECTION, CUSTOM]
         status:
           type: string
-          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+          enum:
+            [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
         title:
           type: ["string", "null"]
         text:
@@ -1335,6 +1349,9 @@ components:
           type: ["string", "null"]
         sourceImageKey:
           type: ["string", "null"]
+        graphicSourceMode:
+          type: string
+          enum: [AUTO, NO_SOURCE_IMAGE]
         audioTrackId:
           type: ["string", "null"]
         audioSelectionMode:
@@ -1345,6 +1362,10 @@ components:
         audioVolume:
           type: ["number", "null"]
         reelDurationSeconds:
+          type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
           type: ["number", "null"]
         publication:
           $ref: "#/components/schemas/Publication"
@@ -1390,6 +1411,10 @@ components:
           type: ["number", "null"]
         reelDurationSeconds:
           type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
+          type: ["number", "null"]
 
     PostUpdate:
       type: object
@@ -1419,6 +1444,10 @@ components:
         audioVolume:
           type: ["number", "null"]
         reelDurationSeconds:
+          type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
           type: ["number", "null"]
 
     Destination:

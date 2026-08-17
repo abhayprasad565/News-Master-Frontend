@@ -10,6 +10,7 @@ export * from './adminLabelList';
 export * from './adminPost';
 export * from './adminPostDetail';
 export * from './adminPostDetailAudioSelectionMode';
+export * from './adminPostDetailGraphicSourceMode';
 export * from './adminPostDetailKind';
 export * from './adminPostDetailStatus';
 export * from './adminPostKind';

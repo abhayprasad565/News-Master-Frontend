@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
 
 type AudioEnergyLevel = "CALM" | "NEUTRAL" | "UPBEAT";
@@ -386,14 +387,14 @@ export default function AdminEditPost() {
               <div className="space-y-5 rounded-lg border bg-muted/20 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <FormLabel className="flex items-center gap-2 font-semibold">
+                    <Label className="flex items-center gap-2 font-semibold">
                       <Music2 className="h-4 w-4" />
                       Reel Audio
-                    </FormLabel>
-                    <FormDescription>
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
                       Saved with the post and used when Instagram Reel
                       publishing is requested.
-                    </FormDescription>
+                    </p>
                   </div>
                   <Badge variant="outline">
                     {form.watch("audioSelectionMode")}

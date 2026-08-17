@@ -33,4 +33,8 @@ export interface PostUpdate {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }

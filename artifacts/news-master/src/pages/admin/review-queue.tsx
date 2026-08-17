@@ -117,7 +117,9 @@ export default function AdminReviewQueue() {
                 <div className="flex-1 p-6 space-y-4">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="font-semibold text-xs">{(job as any).type || (job as any).name || 'REVIEW_JOB'}</Badge>
+                      <Badge variant="default" className="font-semibold text-xs">
+                        {(job as any).displayType || (job as any).type || (job as any).name || 'Review job'}
+                      </Badge>
                       <Badge variant="outline" className="font-mono text-xs">v{job.version}</Badge>
                     </div>
                     <span className="text-xs text-muted-foreground">{format(new Date(job.createdAt), 'MMM d, yyyy HH:mm')}</span>
@@ -125,7 +127,7 @@ export default function AdminReviewQueue() {
 
                   <div>
                     <h2 className="text-lg font-bold tracking-tight text-foreground">
-                      {(job as any).title || (job as any).type || (job as any).name || job.id}
+                      {(job as any).title || (job as any).displayType || (job as any).type || (job as any).name || 'Review item'}
                     </h2>
                     {(job as any).summary && (
                       <p className="mt-2 text-sm text-muted-foreground leading-relaxed whitespace-pre-line bg-muted/20 p-3 rounded-md border border-border/40">
@@ -141,13 +143,31 @@ export default function AdminReviewQueue() {
                         Associated Post: <Link href={`/admin/posts/${(job as any).postId}`} className="ml-1 text-primary hover:underline font-mono">{(job as any).postId}</Link>
                       </div>
                     )}
-                    {(job as any).eventId && (
+                    {(job as any).eventTitle && (
+                      <div className="flex items-center">
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Event: <span className="ml-1 text-foreground">{(job as any).eventTitle}</span>
+                      </div>
+                    )}
+                    {(job as any).claimText && (
+                      <div className="flex items-center">
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Claim: <span className="ml-1 text-foreground">{(job as any).claimText}</span>
+                      </div>
+                    )}
+                    {(job as any).developmentSummary && (
+                      <div className="flex items-center">
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Development: <span className="ml-1 text-foreground">{(job as any).developmentSummary}</span>
+                      </div>
+                    )}
+                    {(job as any).eventId && !(job as any).eventTitle && (
                       <div className="flex items-center">
                         <FileText className="mr-1.5 h-3.5 w-3.5" />
                         Associated Event: <span className="ml-1 font-mono">{(job as any).eventId}</span>
                       </div>
                     )}
-                    {(job as any).claimId && (
+                    {(job as any).claimId && !(job as any).claimText && (
                       <div className="flex items-center">
                         <FileText className="mr-1.5 h-3.5 w-3.5" />
                         Associated Claim: <span className="ml-1 font-mono">{(job as any).claimId}</span>

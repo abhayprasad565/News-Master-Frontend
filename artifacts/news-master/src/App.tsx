@@ -36,6 +36,7 @@ import AdminTopicRules from "@/pages/admin/topic-rules";
 import AdminUrgent from "@/pages/admin/urgent";
 import AdminAutopilot from "@/pages/admin/autopilot";
 import AdminAudioLibrary from "@/pages/admin/audio-library";
+import AdminPostVideo from "@/pages/admin/post-video";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -150,6 +151,13 @@ function App() {
               <ProtectedRoute requireRole="admin">
                 <AdminLayout>
                   <AdminEditPost />
+                </AdminLayout>
+              </ProtectedRoute>
+            </Route>
+            <Route path="/admin/posts/:id/video">
+              <ProtectedRoute requireRole="admin">
+                <AdminLayout>
+                  <AdminPostVideo />
                 </AdminLayout>
               </ProtectedRoute>
             </Route>

@@ -354,6 +354,12 @@ export default function AdminPostDetail() {
             </Button>
           )}
 
+          <Button variant="outline" asChild>
+            <Link href={`/admin/posts/${detail.id}/video`}>
+              <Film className="mr-2 h-4 w-4" /> Create Video
+            </Link>
+          </Button>
+
           {canPublish && (
             <Button
               onClick={() => setPublishOpen(true)}

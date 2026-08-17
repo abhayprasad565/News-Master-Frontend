@@ -3,7 +3,7 @@ import { useGetAdminPosts, AdminPostStatus, AdminPostKind } from '@workspace/api
 import { Link } from 'wouter';
 import { format } from 'date-fns';
 import { 
-  Plus, Search, FileText, CheckCircle2, XCircle, Clock, Edit, CheckSquare
+  Plus, Search, FileText, CheckCircle2, XCircle, Clock, Edit, CheckSquare, Film
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,6 +175,9 @@ export default function AdminPostList() {
                       {format(new Date(post.createdAt), 'MMM d, yyyy HH:mm')}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="sm" asChild title="Create Video">
+                        <Link href={`/admin/posts/${post.id}/video`}><Film className="h-4 w-4" /></Link>
+                      </Button>
                       {['DRAFT', 'MANUAL_REVIEW', 'REJECTED', 'VALIDATED'].includes(post.status) ? (
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/admin/posts/${post.id}/edit`}>Edit</Link>

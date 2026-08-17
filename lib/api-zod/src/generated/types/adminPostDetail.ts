@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminPostDetailAudioSelectionMode } from './adminPostDetailAudioSelectionMode';
+import type { AdminPostDetailGraphicSourceMode } from './adminPostDetailGraphicSourceMode';
 import type { AdminPostDetailKind } from './adminPostDetailKind';
 import type { AdminPostDetailStatus } from './adminPostDetailStatus';
 import type { Delivery } from './delivery';
@@ -39,6 +40,7 @@ export interface AdminPostDetail {
   archivedAt?: string | null;
   /** @nullable */
   sourceImageKey?: string | null;
+  graphicSourceMode?: AdminPostDetailGraphicSourceMode;
   /** @nullable */
   audioTrackId?: string | null;
   /** @nullable */
@@ -49,6 +51,10 @@ export interface AdminPostDetail {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
   publication?: Publication;
   /** @nullable */
   deliveries?: Delivery[] | null;

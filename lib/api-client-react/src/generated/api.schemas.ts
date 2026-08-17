@@ -344,6 +344,14 @@ export const AdminPostDetailStatus = {
   PUBLISHED: 'PUBLISHED',
 } as const;
 
+export type AdminPostDetailGraphicSourceMode = typeof AdminPostDetailGraphicSourceMode[keyof typeof AdminPostDetailGraphicSourceMode];
+
+
+export const AdminPostDetailGraphicSourceMode = {
+  AUTO: 'AUTO',
+  NO_SOURCE_IMAGE: 'NO_SOURCE_IMAGE',
+} as const;
+
 /**
  * @nullable
  */
@@ -382,6 +390,7 @@ export interface AdminPostDetail {
   archivedAt?: string | null;
   /** @nullable */
   sourceImageKey?: string | null;
+  graphicSourceMode?: AdminPostDetailGraphicSourceMode;
   /** @nullable */
   audioTrackId?: string | null;
   /** @nullable */
@@ -392,6 +401,10 @@ export interface AdminPostDetail {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
   publication?: Publication;
   /** @nullable */
   deliveries?: Delivery[] | null;
@@ -433,6 +446,10 @@ export interface PostInput {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }
 
 /**
@@ -472,6 +489,10 @@ export interface PostUpdate {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }
 
 export type DestinationPlatform = typeof DestinationPlatform[keyof typeof DestinationPlatform];

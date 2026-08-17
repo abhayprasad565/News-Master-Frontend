@@ -32,4 +32,8 @@ export interface PostInput {
   audioVolume?: number | null;
   /** @nullable */
   reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }
