@@ -239,7 +239,7 @@ export default function Login() {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => resendMutation.mutate()}
+                  onClick={() => resendMutation.mutate(undefined)}
                   disabled={resendMutation.isPending}
                 >
                   Resend code

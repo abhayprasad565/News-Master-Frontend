@@ -22,6 +22,9 @@ import {
   AlertCircle,
   Film,
   Image as ImageIcon,
+  Sparkles,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -204,6 +207,29 @@ export default function AdminPostDetail() {
     },
   });
 
+  const renderMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ success: boolean; message: string }>(
+        `/api/admin/posts/${id}/render`,
+        { method: "POST" },
+      ),
+    onSuccess: () => {
+      toast({
+        title: "Rendering queued",
+        description: "Graphic and video Reel render jobs are running in background.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetAdminPostQueryKey(id!),
+      });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to trigger render",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -354,6 +380,20 @@ export default function AdminPostDetail() {
             </Button>
           )}
 
+          <Button
+            variant="outline"
+            onClick={() => renderMutation.mutate()}
+            disabled={renderMutation.isPending}
+            className="hover:border-primary"
+          >
+            {renderMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4 text-primary" />
+            )}
+            Render Media
+          </Button>
+
           <Button variant="outline" asChild>
             <Link href={`/admin/posts/${detail.id}/video`}>
               <Film className="mr-2 h-4 w-4" /> Create Video
@@ -437,10 +477,95 @@ export default function AdminPostDetail() {
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <div className="prose prose-sm dark:prose-invert max-w-none font-serif bg-muted/30 p-6 rounded-md whitespace-pre-wrap border border-dashed">
               {detail.text || (
                 <span className="text-muted-foreground italic">No content</span>
+              )}
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" /> Media Assets & Rendering
+                </h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => renderMutation.mutate()}
+                  disabled={renderMutation.isPending}
+                  className="h-8 text-xs"
+                >
+                  {renderMutation.isPending ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  {(detail as any).media?.length > 0 ? "Re-render" : "Render Media"}
+                </Button>
+              </div>
+
+              {(detail as any).media && (detail as any).media.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(detail as any).media.map((mediaItem: any, idx: number) => (
+                    <div
+                      key={mediaItem.id || idx}
+                      className="rounded-lg overflow-hidden border bg-muted/30 aspect-[4/3] relative group shadow-sm"
+                    >
+                      {mediaItem.type === "REEL" ? (
+                        <video
+                          src={mediaItem.url}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <a
+                          href={mediaItem.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full h-full"
+                        >
+                          <img
+                            src={mediaItem.url}
+                            alt="Rendered graphic"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        </a>
+                      )}
+                      <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
+                        {mediaItem.type}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed p-6 text-center bg-muted/20 space-y-3">
+                  <div className="inline-flex p-3 rounded-full bg-muted/50 text-muted-foreground">
+                    <ImageIcon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">No Rendered Assets Yet</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                      {(detail as any).sourceImageKey
+                        ? "Custom background image is saved. Click below to render 4:5 graphic cards and 9:16 video Reels."
+                        : "Post content is ready. Click below to generate official graphics and video assets."}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => renderMutation.mutate()}
+                    disabled={renderMutation.isPending}
+                    className="bg-primary text-primary-foreground"
+                  >
+                    {renderMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Render Graphic & Video Now
+                  </Button>
+                </div>
               )}
             </div>
           </CardContent>
