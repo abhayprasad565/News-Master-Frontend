@@ -114,18 +114,82 @@ export default function AdminTopicRules() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Topic Rules</h1>
-          <p className="mt-1 text-muted-foreground">Important and trending topic controls. Environment rules are read-only.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Topic Rules</h1>
+          <p className="mt-1 text-muted-foreground text-sm sm:text-base">Important and trending topic controls. Environment rules are read-only.</p>
         </div>
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />New rule</Button>
+        <Button onClick={openCreate} className="self-start sm:self-auto"><Plus className="mr-2 h-4 w-4" />New rule</Button>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+      <Card className="overflow-hidden w-full">
+        {/* Mobile View */}
+        <div className="block md:hidden divide-y">
+          {isLoading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading topic rules...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-destructive">Failed to load topic rules.</div>
+          ) : !data?.items?.length ? (
+            <div className="p-12 text-center text-muted-foreground">No topic rules configured.</div>
+          ) : (
+            data.items.map((rule) => {
+              const readOnly = rule.source === 'ENV';
+              return (
+                <div key={rule.id} className={`p-4 space-y-3 ${rule.archivedAt ? 'opacity-50' : 'hover:bg-muted/20'} transition-colors`}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-semibold text-base text-foreground">{rule.displayName}</span>
+                    <Badge variant={rule.mode === 'SUPPRESS' ? 'destructive' : 'secondary'}>
+                      {rule.mode}{rule.mode === 'BOOST' && rule.boost ? ` +${rule.boost}` : ''}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                    <span className="font-mono">{rule.stableKey}</span>
+                    {rule.category && <span>• Category: {rule.category}</span>}
+                    {rule.urgentEligible && <Badge className="bg-red-600 text-[10px]">Urgent</Badge>}
+                    {readOnly && <Badge variant="outline" className="text-[10px]"><ShieldCheck className="mr-1 h-3 w-3" />ENV</Badge>}
+                    {rule.archivedAt && <Badge variant="secondary" className="text-[10px]">Archived</Badge>}
+                  </div>
+
+                  {(rule.activeFrom || rule.activeUntil) && (
+                    <div className="text-xs text-muted-foreground bg-muted/40 p-2 rounded">
+                      Window: {rule.activeFrom || 'Start'} to {rule.activeUntil || 'Forever'}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={readOnly || !!rule.archivedAt}
+                      onClick={() => openEdit(rule)}
+                      className="h-8 text-xs"
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={readOnly || !!rule.archivedAt}
+                      onClick={() => {
+                        const reason = window.prompt(`Reason for archiving ${rule.displayName}`);
+                        if (reason?.trim()) archiveMutation.mutate({ id: rule.id, reason });
+                      }}
+                      className="h-8 text-xs text-destructive hover:text-destructive"
+                    >
+                      <Archive className="h-3.5 w-3.5 mr-1" /> Archive
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto w-full">
+          <table className="w-full text-left text-sm table-auto">
             <thead className="border-b bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">Rule</th>

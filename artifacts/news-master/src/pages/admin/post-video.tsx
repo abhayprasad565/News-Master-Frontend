@@ -145,21 +145,23 @@ export default function AdminPostVideo() {
     setSettings({ ...current, ...patch });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Button variant="link" className="px-0" asChild><Link href={`/admin/posts/${postId}`}>Back to post</Link></Button>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">Manual Video</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight flex items-center gap-2 flex-wrap">
+            Manual Video <span className="text-primary font-mono font-normal text-xl sm:text-2xl">#{(data.post as any).postNumber || data.post.id.slice(0, 8)}</span>
+          </h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{data.post.title || data.post.text.slice(0, 140)}</p>
-          <div className="mt-2 flex gap-2"><Badge variant="outline">{data.post.status}</Badge><Badge>{data.render.state}</Badge>{data.heldDelivery && <Badge variant="secondary">Held Reel</Badge>}</div>
+          <div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{data.post.status}</Badge><Badge>{data.render.state}</Badge>{data.heldDelivery && <Badge variant="secondary">Held Reel</Badge>}</div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => query.refetch()}><RefreshCw className="mr-2 h-4 w-4" />Refresh</Button>
           <Button onClick={() => renderMutation.mutate()} disabled={renderMutation.isPending || !current}><Film className="mr-2 h-4 w-4" />Create MP4</Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[360px_1fr]">
         <div className="space-y-6">
           <Card>
             <CardHeader><CardTitle className="text-base">Cover</CardTitle></CardHeader>
@@ -171,7 +173,7 @@ export default function AdminPostVideo() {
             <CardHeader><CardTitle className="text-base">Ready MP4</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {data.reel ? <video src={data.reel.previewUrl} controls className="aspect-[9/16] w-full rounded-md border bg-black" /> : <div className="aspect-[9/16] rounded-md border bg-muted grid place-items-center text-sm text-muted-foreground">{data.render.state}</div>}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" className="flex-1" disabled={!data.reel} asChild={Boolean(data.reel)}>
                   {data.reel ? <a href={data.reel.downloadUrl} download={data.reel.downloadFilename}><Download className="mr-2 h-4 w-4" />Download MP4</a> : <span><Download className="mr-2 h-4 w-4" />Download MP4</span>}
                 </Button>
@@ -188,7 +190,7 @@ export default function AdminPostVideo() {
               <Tabs value={current.audioSelectionMode} onValueChange={(value) => update({ audioSelectionMode: value as "AUTO" | "MANUAL" })}>
                 <TabsList><TabsTrigger value="AUTO">AUTO</TabsTrigger><TabsTrigger value="MANUAL">MANUAL</TabsTrigger></TabsList>
               </Tabs>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
                 <Select value={theme} onValueChange={setTheme}><SelectTrigger><SelectValue placeholder="Theme" /></SelectTrigger><SelectContent><SelectItem value="all">All themes</SelectItem>{themes.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select>
                 <Select value={energy} onValueChange={setEnergy}><SelectTrigger><SelectValue placeholder="Energy" /></SelectTrigger><SelectContent><SelectItem value="all">All energy</SelectItem><SelectItem value="CALM">CALM</SelectItem><SelectItem value="NEUTRAL">NEUTRAL</SelectItem><SelectItem value="UPBEAT">UPBEAT</SelectItem></SelectContent></Select>
                 <Select value={tag} onValueChange={setTag}><SelectTrigger><SelectValue placeholder="Tag" /></SelectTrigger><SelectContent><SelectItem value="all">All tags</SelectItem>{data.audioTags.map((item) => <SelectItem key={item.id} value={item.slug}>{item.displayName}</SelectItem>)}</SelectContent></Select>

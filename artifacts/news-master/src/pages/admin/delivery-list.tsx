@@ -36,15 +36,15 @@ export default function AdminDeliveryList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">Deliveries</h1>
-        <p className="text-muted-foreground mt-1">Monitor the status of content pushed to external platforms.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Deliveries</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Monitor the status of content pushed to external platforms.</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -56,7 +56,7 @@ export default function AdminDeliveryList() {
         </Select>
 
         <Select value={platform} onValueChange={setPlatform}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Platform" />
           </SelectTrigger>
           <SelectContent>

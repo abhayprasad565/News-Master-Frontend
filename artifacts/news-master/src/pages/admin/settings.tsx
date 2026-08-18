@@ -54,13 +54,13 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">Settings</h1>
-        <p className="mt-1 text-muted-foreground">Session, backend readiness, and operational diagnostics.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Settings</h1>
+        <p className="mt-1 text-muted-foreground text-sm sm:text-base">Session, backend readiness, and operational diagnostics.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium">

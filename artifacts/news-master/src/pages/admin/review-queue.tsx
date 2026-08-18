@@ -86,10 +86,10 @@ export default function AdminReviewQueue() {
   const isPending = approveMutation.isPending || rejectMutation.isPending || requeueMutation.isPending || requestCorrectionMutation.isPending;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">Review Queue</h1>
-        <p className="text-muted-foreground mt-1">Review AI-generated content before publication.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Review Queue</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Review AI-generated content before publication.</p>
       </div>
 
       {isLoading ? (
@@ -140,7 +140,9 @@ export default function AdminReviewQueue() {
                     {(job as any).postId && (
                       <div className="flex items-center">
                         <FileText className="mr-1.5 h-3.5 w-3.5" />
-                        Associated Post: <Link href={`/admin/posts/${(job as any).postId}`} className="ml-1 text-primary hover:underline font-mono">{(job as any).postId}</Link>
+                        Associated Post: <Link href={`/admin/posts/${(job as any).postNumber || (job as any).postId}`} className="ml-1 text-primary hover:underline font-mono font-semibold">
+                          #{(job as any).postNumber || (job as any).postId.slice(0, 8)}
+                        </Link>
                       </div>
                     )}
                     {(job as any).eventTitle && (
@@ -185,10 +187,10 @@ export default function AdminReviewQueue() {
                   </details>
                 </div>
 
-                <div className="bg-muted/20 p-6 border-t md:border-t-0 md:border-l flex flex-col justify-center gap-3 md:w-64">
+                <div className="bg-muted/20 p-4 sm:p-6 border-t md:border-t-0 md:border-l flex flex-col justify-center gap-3 md:w-64">
                   {(job as any).postId && (
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/admin/posts/${(job as any).postId}/edit`}>
+                      <Link href={`/admin/posts/${(job as any).postNumber || (job as any).postId}/edit`}>
                         <FileText className="mr-2 h-4 w-4" /> Edit Draft
                       </Link>
                     </Button>

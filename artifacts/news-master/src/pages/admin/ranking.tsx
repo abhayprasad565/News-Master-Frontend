@@ -71,19 +71,19 @@ export default function AdminRanking() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Five-Minute Ranking</h1>
-          <p className="mt-1 text-muted-foreground">Ranked feed, urgent eligibility, and score explanations.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Five-Minute Ranking</h1>
+          <p className="mt-1 text-muted-foreground text-sm sm:text-base">Ranked feed, urgent eligibility, and score explanations.</p>
         </div>
-        <Button variant="outline" onClick={() => refetch()}>
+        <Button variant="outline" onClick={() => refetch()} className="self-start sm:self-auto">
           <RefreshCcw className="mr-2 h-4 w-4" />
           Refresh
         </Button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_160px_160px_180px_160px]">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_160px_160px_180px_160px]">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search ranking feed" />
@@ -121,9 +121,69 @@ export default function AdminRanking() {
         </Select>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="overflow-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+      <Card className="overflow-hidden w-full">
+        {/* Mobile View */}
+        <div className="block md:hidden divide-y">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="p-4 space-y-3">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            ))
+          ) : error ? (
+            <div className="p-8 text-center text-destructive">Failed to load ranking feed.</div>
+          ) : items.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">No ranked items match the current filters.</div>
+          ) : (
+            items.map((item) => {
+              const id = item.assessmentId || item.id;
+              const tierValue = item.tier || 'STANDARD';
+              const isUuid = (str?: string) => !str || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+              const topicsText = (item.secondaryTopics || []).filter(Boolean).join(' • ');
+              const displayTitle = !isUuid(item.title)
+                ? item.title!
+                : !isUuid(item.summary)
+                  ? item.summary!
+                  : topicsText || item.primaryCategory || item.category || `Signal ${id.slice(0, 8)}`;
+              return (
+                <div key={id} className="p-4 space-y-3 hover:bg-muted/20 transition-colors">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant={tierValue === 'URGENT' ? 'destructive' : 'secondary'}>{tierValue}</Badge>
+                      <Badge variant="outline">{item.developmentType || item.novelty || 'UNKNOWN'}</Badge>
+                      {(item.urgent || item.urgentEligible) && <Badge className="bg-red-600"><Rocket className="mr-1 h-3 w-3" />Urgent</Badge>}
+                    </div>
+                    <span className="font-mono font-bold text-sm">Score: {item.importanceScore ?? item.score ?? '-'}</span>
+                  </div>
+
+                  <Link href={`/admin/ranking/${id}`} className="font-semibold text-base block hover:underline text-foreground leading-snug">
+                    {displayTitle}
+                  </Link>
+
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="outline" className="text-[11px]">{item.primaryCategory || item.category || 'uncategorized'}</Badge>
+                    {(item.secondaryTopics || []).slice(0, 3).map((topic) => <Badge key={topic} variant="secondary" className="text-[11px]">{topic}</Badge>)}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t text-xs text-muted-foreground">
+                    <span>{item.sourceCount ?? 0} sources {item.firstSeenAt && `• ${formatDistanceToNow(new Date(item.firstSeenAt), { addSuffix: true })}`}</span>
+                    <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs">
+                      <Link href={`/admin/ranking/${id}`}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View Signal
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto w-full">
+          <table className="w-full text-left text-sm table-auto">
             <thead className="border-b bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">Story Signal</th>

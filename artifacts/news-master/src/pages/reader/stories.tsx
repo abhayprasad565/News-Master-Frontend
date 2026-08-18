@@ -1,16 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useGetStories, useGetPublicLabels, Story } from '@workspace/api-client-react';
 import { Link, useParams } from 'wouter';
-import { format, subDays } from 'date-fns';
-import type { DateRange } from 'react-day-picker';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { Search, Filter, Loader2, Calendar as CalendarIcon, LayoutGrid, ExternalLink, X, Film, Image as ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export default function StoriesList() {
@@ -20,11 +17,36 @@ export default function StoriesList() {
 
   const [search, setSearch] = useState(initialQuery.get('q') || '');
   const [platform, setPlatform] = useState(initialQuery.get('platform') || 'all');
-  const [from, setFrom] = useState(initialQuery.get('from') || '');
-  const [to, setTo] = useState(initialQuery.get('to') || '');
+  const [datePreset, setDatePreset] = useState(initialQuery.get('preset') || 'all');
+  const [customFrom, setCustomFrom] = useState(initialQuery.get('from') || '');
+  const [customTo, setCustomTo] = useState(initialQuery.get('to') || '');
   const debouncedSearch = useDebounce(search, 500);
 
   const { data: labelsData } = useGetPublicLabels();
+
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+    if (datePreset === 'today') {
+      return { dateFrom: startOfDay(now).toISOString(), dateTo: endOfDay(now).toISOString() };
+    }
+    if (datePreset === 'yesterday') {
+      const y = subDays(now, 1);
+      return { dateFrom: startOfDay(y).toISOString(), dateTo: endOfDay(y).toISOString() };
+    }
+    if (datePreset === 'last7days') {
+      return { dateFrom: subDays(now, 7).toISOString(), dateTo: endOfDay(now).toISOString() };
+    }
+    if (datePreset === 'last30days') {
+      return { dateFrom: subDays(now, 30).toISOString(), dateTo: endOfDay(now).toISOString() };
+    }
+    if (datePreset === 'custom') {
+      return {
+        dateFrom: customFrom ? startOfDay(new Date(customFrom)).toISOString() : undefined,
+        dateTo: customTo ? endOfDay(new Date(customTo)).toISOString() : undefined,
+      };
+    }
+    return { dateFrom: undefined, dateTo: undefined };
+  }, [datePreset, customFrom, customTo]);
   
   const queryParams = useMemo(() => {
     const p: any = {};
@@ -32,75 +54,42 @@ export default function StoriesList() {
     if (debouncedSearch) p.q = debouncedSearch;
     if (labelSlug) p.label = labelSlug;
     if (platform !== 'all') p.platform = platform;
-    if (from) p.from = from;
-    if (to) p.to = to;
+    if (dateFrom) p.from = dateFrom;
+    if (dateTo) p.to = dateTo;
 
     const urlParams = new URLSearchParams();
     if (debouncedSearch) urlParams.set('q', debouncedSearch);
     if (platform !== 'all') urlParams.set('platform', platform);
-    if (from) urlParams.set('from', from);
-    if (to) urlParams.set('to', to);
+    if (datePreset !== 'all') urlParams.set('preset', datePreset);
+    if (customFrom) urlParams.set('from', customFrom);
+    if (customTo) urlParams.set('to', customTo);
     const nextUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams}` : ''}`;
     window.history.replaceState(null, '', nextUrl);
 
     return p;
-  }, [debouncedSearch, labelSlug, platform, from, to]);
-
-  const dateRange: DateRange | undefined = useMemo(() => {
-    if (!from && !to) return undefined;
-    return {
-      from: from ? new Date(from + 'T00:00:00') : undefined,
-      to: to ? new Date(to + 'T23:59:59') : undefined,
-    };
-  }, [from, to]);
-
-  const handleRangeSelect = (range: DateRange | undefined) => {
-    if (!range) {
-      setFrom('');
-      setTo('');
-      return;
-    }
-    setFrom(range.from ? format(range.from, 'yyyy-MM-dd') : '');
-    setTo(range.to ? format(range.to, 'yyyy-MM-dd') : '');
-  };
-
-  const formattedDateLabel = useMemo(() => {
-    if (from && to) {
-      if (from === to) {
-        return format(new Date(from + 'T00:00:00'), 'MMM d, yyyy');
-      }
-      return `${format(new Date(from + 'T00:00:00'), 'MMM d')} – ${format(new Date(to + 'T00:00:00'), 'MMM d, yyyy')}`;
-    }
-    if (from) {
-      return `From ${format(new Date(from + 'T00:00:00'), 'MMM d, yyyy')}`;
-    }
-    if (to) {
-      return `Until ${format(new Date(to + 'T00:00:00'), 'MMM d, yyyy')}`;
-    }
-    return 'Filter by date';
-  }, [from, to]);
+  }, [debouncedSearch, labelSlug, platform, dateFrom, dateTo, datePreset, customFrom, customTo]);
 
   const { data: storiesData, isLoading, error } = useGetStories(queryParams);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-4xl font-serif font-bold tracking-tight">Latest News</h1>
+    <div className="space-y-4 sm:space-y-6 w-full max-w-4xl mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+          <h1 className="text-2xl sm:text-4xl font-serif font-bold tracking-tight">Latest News</h1>
           {labelSlug && (
-            <p className="text-muted-foreground mt-2 text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Filtering by: <span className="font-semibold text-foreground">#{labelSlug}</span>
-              <Link href="/stories" className="ml-2 text-sm text-primary hover:underline">Clear</Link>
+              <Link href="/stories" className="ml-2 text-xs sm:text-sm text-primary hover:underline">Clear</Link>
             </p>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:max-w-2xl">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-2 w-full">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search stories..." 
-              className="pl-9 bg-muted/40 dark:bg-zinc-900/60 border-border/80 dark:border-white/12 focus-visible:bg-background h-10 shadow-xs"
+              className="pl-9 bg-muted/40 dark:bg-zinc-900/60 border-border/80 dark:border-white/12 focus-visible:bg-background h-10 shadow-xs text-sm w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -116,109 +105,59 @@ export default function StoriesList() {
             )}
           </div>
           
-          <div className="w-full sm:w-[150px] shrink-0">
-            <Select value={platform} onValueChange={setPlatform}>
-              <SelectTrigger className="h-10 bg-muted/40 dark:bg-zinc-900/60 border-border/80 dark:border-white/12 focus:bg-background shadow-xs active:scale-[0.98] transition-transform">
-                <SelectValue placeholder="Platform" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-zinc-900 dark:border-white/15">
-                <SelectItem value="all">All platforms</SelectItem>
-                <SelectItem value="instagram">Instagram</SelectItem>
-                <SelectItem value="x">X</SelectItem>
-                <SelectItem value="telegram">Telegram</SelectItem>
-                <SelectItem value="webhook">Webhook</SelectItem>
-                <SelectItem value="whatsapp">WhatsApp</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5">
+            <div className="w-full sm:w-[150px]">
+              <Select value={platform} onValueChange={setPlatform}>
+                <SelectTrigger className="h-9 sm:h-10 bg-muted/40 dark:bg-zinc-900/60 border-border/80 dark:border-white/12 focus:bg-background shadow-xs text-xs sm:text-sm w-full">
+                  <SelectValue placeholder="Platform" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-zinc-900 dark:border-white/15">
+                  <SelectItem value="all">All platforms</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="x">X</SelectItem>
+                  <SelectItem value="telegram">Telegram</SelectItem>
+                  <SelectItem value="webhook">Webhook</SelectItem>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-full sm:w-[160px]">
+              <Select value={datePreset} onValueChange={setDatePreset}>
+                <SelectTrigger className="h-9 sm:h-10 bg-muted/40 dark:bg-zinc-900/60 border-border/80 dark:border-white/12 focus:bg-background shadow-xs text-xs sm:text-sm w-full">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-zinc-900 dark:border-white/15">
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="last7days">Last 7 Days</SelectItem>
+                  <SelectItem value="last30days">Last 30 Days</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="shrink-0">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={`h-10 justify-start text-left font-normal gap-2 border-border/80 dark:border-white/15 bg-muted/40 dark:bg-zinc-900/60 hover:bg-muted/80 dark:hover:bg-zinc-800 ${
-                    from || to ? 'text-foreground font-medium bg-muted/80 dark:bg-zinc-800 border-primary/40 ring-1 ring-primary/20' : 'text-muted-foreground'
-                  }`}
-                >
-                  <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate max-w-[180px]">{formattedDateLabel}</span>
-                  {(from || to) && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRangeSelect(undefined);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.stopPropagation();
-                          handleRangeSelect(undefined);
-                        }
-                      }}
-                      className="ml-1 rounded-full hover:bg-background/80 dark:hover:bg-zinc-700 p-0.5 active:scale-90 transition-transform"
-                      title="Clear date filter"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 dark:bg-zinc-900 dark:border-white/15 shadow-xl" align="end">
-                <div className="p-3 border-b border-border/60 dark:border-white/10 flex flex-wrap gap-1.5 bg-muted/20 dark:bg-zinc-950/40">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20"
-                    onClick={() => {
-                      const today = new Date();
-                      handleRangeSelect({ from: today, to: today });
-                    }}
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20"
-                    onClick={() => {
-                      handleRangeSelect({ from: subDays(new Date(), 6), to: new Date() });
-                    }}
-                  >
-                    Last 7 days
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 rounded-full hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20"
-                    onClick={() => {
-                      handleRangeSelect({ from: subDays(new Date(), 29), to: new Date() });
-                    }}
-                  >
-                    Last 30 days
-                  </Button>
-                  {(from || to) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs px-2.5 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRangeSelect(undefined)}
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                <CalendarComponent
-                  mode="range"
-                  defaultMonth={dateRange?.from || new Date()}
-                  selected={dateRange}
-                  onSelect={handleRangeSelect}
-                  numberOfMonths={1}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {datePreset === 'custom' && (
+            <div className="flex flex-wrap items-center gap-2 p-2.5 bg-muted/40 rounded-lg border text-xs">
+              <span className="font-medium text-muted-foreground">From:</span>
+              <Input
+                type="date"
+                className="w-auto h-8 text-xs"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
+              <span className="font-medium text-muted-foreground">To:</span>
+              <Input
+                type="date"
+                className="w-auto h-8 text-xs"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -290,6 +229,8 @@ export default function StoriesList() {
 function StoryCard({ story }: { story: Story }) {
   const publishedAt = story.publishedAt ? new Date(story.publishedAt) : null;
   const isCorrection = story.kind === 'CORRECTION';
+  const postNum = (story as any).postNumber;
+  const storyTarget = postNum ? String(postNum) : story.id;
 
   const isGenericOrUuid = (str?: string | null) =>
     !str ||
@@ -316,79 +257,11 @@ function StoryCard({ story }: { story: Story }) {
 
   return (
     <Card className={`overflow-hidden transition-all duration-200 hover:shadow-lg dark:hover:shadow-[0_0_24px_rgba(0,0,0,0.6)] dark:border-white/10 ${isCorrection ? 'border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/10' : ''}`}>
-      <div className="p-6">
-        <div className="flex flex-col-reverse md:flex-row md:items-start gap-5">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              {isCorrection && (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300">
-                  Correction
-                </Badge>
-              )}
-              {story.labels?.map(l => (
-                <Badge key={l.id} variant="secondary" className="bg-muted text-xs" style={{ borderLeftColor: l.color, borderLeftWidth: '3px' }}>
-                  {l.name}
-                </Badge>
-              ))}
-              {publishedAt && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-                  <CalendarIcon className="h-3 w-3" />
-                  {format(publishedAt, 'MMM d, yyyy • h:mm a')}
-                </div>
-              )}
-            </div>
-
-            <Link href={`/stories/${story.id}`}>
-              <h2 className="text-2xl font-serif font-bold text-foreground hover:text-primary transition-colors cursor-pointer mb-3 leading-tight">
-                {storyTitle || 'Story'}
-              </h2>
-            </Link>
-            
-            <p className="text-muted-foreground line-clamp-3 leading-relaxed text-sm">
-              {story.text}
-            </p>
-
-            {sourceUrl && (
-              <div className="mt-4 pt-3 border-t border-border/60 dark:border-white/10 flex items-center text-xs font-medium text-primary">
-                <span className="text-muted-foreground mr-1.5">Read full article at:</span>
-                <a
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-primary/80 inline-flex items-center gap-1 font-semibold text-primary"
-                >
-                  {sourceName || sourceUrl}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
-
-            {(story.media?.length > 0 || story.platformLinks?.length > 0) && (
-              <div className="mt-3 pt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center gap-3">
-                  {reelMedia && (
-                    <span className="inline-flex items-center gap-1 text-primary font-medium">
-                      <Film className="h-3.5 w-3.5" /> Reel
-                    </span>
-                  )}
-                  {graphicMedia && (
-                    <span className="inline-flex items-center gap-1">
-                      <ImageIcon className="h-3.5 w-3.5" /> Graphic
-                    </span>
-                  )}
-                </div>
-                {story.platformLinks?.length > 0 && (
-                  <div className="flex gap-1.5 capitalize">
-                    {story.platformLinks.map(p => p.platform).join(', ')}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
+      <div className="p-3 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-5">
           {primaryMedia && (
-            <Link href={`/stories/${story.id}`} className="shrink-0 group block">
-              <div className="relative w-full md:w-48 lg:w-56 aspect-[4/3] md:aspect-[4/3] rounded-lg overflow-hidden border border-border/70 dark:border-white/12 bg-muted/40 shadow-xs">
+            <Link href={`/stories/${storyTarget}`} className="shrink-0 group block w-full sm:w-44 md:w-52 sm:order-2">
+              <div className="relative w-full aspect-[16/9] sm:aspect-[4/3] rounded-lg overflow-hidden border border-border/70 dark:border-white/12 bg-muted/40 shadow-xs">
                 {primaryMedia.type === 'REEL' ? (
                   <video
                     src={primaryMedia.url}
@@ -413,6 +286,77 @@ function StoryCard({ story }: { story: Story }) {
               </div>
             </Link>
           )}
+
+          <div className="flex-1 min-w-0 sm:order-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+              <Link href={`/stories/${storyTarget}`} className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded hover:underline">
+                #{postNum || story.id.slice(0, 6)}
+              </Link>
+              {isCorrection && (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 text-[11px] py-0.5">
+                  Correction
+                </Badge>
+              )}
+              {story.labels?.map(l => (
+                <Badge key={l.id} variant="secondary" className="bg-muted text-[11px] py-0.5" style={{ borderLeftColor: l.color, borderLeftWidth: '3px' }}>
+                  {l.name}
+                </Badge>
+              ))}
+              {publishedAt && (
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
+                  <CalendarIcon className="h-3 w-3" />
+                  {format(publishedAt, 'MMM d, yyyy • h:mm a')}
+                </div>
+              )}
+            </div>
+
+            <Link href={`/stories/${storyTarget}`}>
+              <h2 className="text-base sm:text-lg md:text-xl font-serif font-bold text-foreground hover:text-primary transition-colors cursor-pointer mb-2 leading-snug">
+                {storyTitle || `Story #${postNum || story.id.slice(0, 6)}`}
+              </h2>
+            </Link>
+            
+            <p className="text-muted-foreground line-clamp-3 leading-relaxed text-xs sm:text-sm">
+              {story.text}
+            </p>
+
+            {sourceUrl && (
+              <div className="mt-2.5 pt-2 border-t border-border/60 dark:border-white/10 flex items-center text-xs font-medium text-primary flex-wrap gap-1">
+                <span className="text-muted-foreground mr-1 text-[11px]">Source:</span>
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-primary/80 inline-flex items-center gap-1 font-semibold text-primary text-[11px] sm:text-xs"
+                >
+                  {sourceName || sourceUrl}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            )}
+
+            {(story.media?.length > 0 || story.platformLinks?.length > 0) && (
+              <div className="mt-2 pt-1.5 flex items-center justify-between text-[11px] text-muted-foreground flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  {reelMedia && (
+                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                      <Film className="h-3.5 w-3.5" /> Reel
+                    </span>
+                  )}
+                  {graphicMedia && (
+                    <span className="inline-flex items-center gap-1">
+                      <ImageIcon className="h-3.5 w-3.5" /> Graphic
+                    </span>
+                  )}
+                </div>
+                {story.platformLinks?.length > 0 && (
+                  <div className="flex gap-1.5 capitalize text-[10px] sm:text-[11px]">
+                    {story.platformLinks.map(p => p.platform).join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Card>

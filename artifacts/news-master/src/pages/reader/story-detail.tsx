@@ -129,25 +129,29 @@ export default function StoryDetail() {
 
   const publishedAt = story.publishedAt ? new Date(story.publishedAt) : null;
   const isCorrection = story.kind === "CORRECTION";
+  const postNum = (story as any).postNumber;
 
   return (
-    <article className="max-w-3xl mx-auto py-8">
+    <article className="w-full max-w-3xl mx-auto py-3 sm:py-8">
       <Link
         href="/stories"
-        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-8 transition-colors"
+        className="inline-flex items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground mb-4 sm:mb-8 transition-colors"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <ArrowLeft className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
         Back to stories
       </Link>
 
-      <header className="mb-10 space-y-6">
-        <div className="flex flex-wrap items-center gap-3">
+      <header className="mb-6 sm:mb-10 space-y-3 sm:space-y-6">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
+          <span className="font-mono text-xs sm:text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md">
+            #{postNum || story.id.slice(0, 6)}
+          </span>
           {isCorrection && (
             <Badge
               variant="outline"
-              className="bg-amber-100 text-amber-800 border-amber-200 text-sm py-1 px-3"
+              className="bg-amber-100 text-amber-800 border-amber-200 text-xs sm:text-sm py-0.5 sm:py-1 px-2 sm:px-3"
             >
-              <AlertTriangle className="h-3 w-3 mr-1.5" />
+              <AlertTriangle className="h-3 w-3 mr-1" />
               Correction
             </Badge>
           )}
@@ -155,7 +159,7 @@ export default function StoryDetail() {
             <Link key={l.id} href={`/labels/${l.slug}`}>
               <Badge
                 variant="secondary"
-                className="hover:bg-secondary/80 cursor-pointer text-sm py-1 px-3"
+                className="hover:bg-secondary/80 cursor-pointer text-xs sm:text-sm py-0.5 sm:py-1 px-2 sm:px-3"
                 style={{ borderLeftColor: l.color, borderLeftWidth: "3px" }}
               >
                 {l.name}
@@ -194,15 +198,15 @@ export default function StoryDetail() {
           }
 
           return (
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight tracking-tight">
-              {storyTitle || `Story ${story.id.slice(0, 8)}`}
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground leading-snug sm:leading-tight tracking-tight">
+              {storyTitle || `Story #${postNum || story.id.slice(0, 8)}`}
             </h1>
           );
         })()}
 
         {publishedAt && (
-          <div className="flex items-center text-sm text-muted-foreground border-b pb-6">
-            <Calendar className="mr-2 h-4 w-4" />
+          <div className="flex items-center text-xs sm:text-sm text-muted-foreground border-b pb-3 sm:pb-6">
+            <Calendar className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <time dateTime={publishedAt.toISOString()}>
               Published {format(publishedAt, "MMMM d, yyyy • h:mm a")}
             </time>
@@ -210,9 +214,11 @@ export default function StoryDetail() {
         )}
       </header>
 
-      <div className="mb-8 flex flex-wrap items-center gap-2 border-y py-4">
+      <div className="mb-6 sm:mb-8 flex flex-wrap items-center gap-2 border-y py-3 sm:py-4">
         <Button
           variant={engagement.likedByMe ? "default" : "outline"}
+          size="sm"
+          className="h-8 sm:h-9 text-xs sm:text-sm"
           onClick={() =>
             requireAccount(() =>
               action.mutate({
@@ -223,11 +229,13 @@ export default function StoryDetail() {
           }
           disabled={action.isPending}
         >
-          <Heart className="mr-2 h-4 w-4" />
+          <Heart className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           {engagement.likeCount ?? 0}
         </Button>
         <Button
           variant={engagement.savedByMe ? "default" : "outline"}
+          size="sm"
+          className="h-8 sm:h-9 text-xs sm:text-sm"
           onClick={() =>
             requireAccount(() =>
               action.mutate({
@@ -238,25 +246,25 @@ export default function StoryDetail() {
           }
           disabled={action.isPending}
         >
-          <Bookmark className="mr-2 h-4 w-4" />
+          <Bookmark className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           {engagement.savedByMe ? "Saved" : "Save"}
         </Button>
-        <span className="ml-auto inline-flex items-center text-sm text-muted-foreground">
-          <MessageCircle className="mr-2 h-4 w-4" />
+        <span className="ml-auto inline-flex items-center text-xs sm:text-sm text-muted-foreground">
+          <MessageCircle className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           {engagement.commentCount ?? 0} comments
         </span>
       </div>
 
       {isCorrection && story.correctionOfPostId && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-4 rounded-lg mb-8">
-          <p className="text-amber-800 dark:text-amber-200 text-sm font-medium flex items-start">
-            <AlertTriangle className="h-5 w-5 mr-2 shrink-0" />
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3 sm:p-4 rounded-lg mb-6 sm:mb-8">
+          <p className="text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-medium flex items-start">
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 shrink-0" />
             This article serves as a correction to a previously published story.
           </p>
         </div>
       )}
 
-      <div className="prose prose-lg dark:prose-invert max-w-none mb-12 prose-p:leading-relaxed prose-p:mb-6 text-foreground/90 font-serif">
+      <div className="prose prose-base sm:prose-lg dark:prose-invert max-w-none mb-8 sm:mb-12 prose-p:leading-relaxed prose-p:mb-4 sm:prose-p:mb-6 text-foreground/90 font-serif">
         {story.text
           .split("\n")
           .map((paragraph, i) =>
@@ -272,7 +280,7 @@ export default function StoryDetail() {
           story.text?.match(/Source:\s*([^|\n]+)/i)?.[1]?.trim();
         if (!sourceUrl) return null;
         return (
-          <div className="mb-12 p-4 rounded-lg bg-muted/40 border flex items-center justify-between flex-wrap gap-2 text-sm font-medium">
+          <div className="mb-8 sm:mb-12 p-3 sm:p-4 rounded-lg bg-muted/40 border flex items-center justify-between flex-wrap gap-2 text-xs sm:text-sm font-medium">
             <span className="text-muted-foreground font-sans">
               Read full article at:
             </span>
@@ -280,23 +288,23 @@ export default function StoryDetail() {
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline inline-flex items-center font-semibold text-base font-sans"
+              className="text-primary hover:underline inline-flex items-center font-semibold text-xs sm:text-base font-sans"
             >
               {sourceName || sourceUrl}
-              <ExternalLink className="ml-1.5 h-4 w-4" />
+              <ExternalLink className="ml-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </a>
           </div>
         );
       })()}
 
       {story.media && story.media.length > 0 && (
-        <div className="mb-12 space-y-4">
-          <h3 className="text-lg font-bold font-sans">Media</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="mb-8 sm:mb-12 space-y-3 sm:space-y-4">
+          <h3 className="text-base sm:text-lg font-bold font-sans">Media</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {story.media.map((media, idx) => (
               <div
                 key={idx}
-                className="rounded-lg overflow-hidden border bg-muted aspect-video relative"
+                className="rounded-lg overflow-hidden border bg-muted aspect-video relative w-full"
               >
                 {media.type === "REEL" ? (
                   <video

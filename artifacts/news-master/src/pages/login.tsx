@@ -15,14 +15,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch, setCsrfToken } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
@@ -186,11 +181,9 @@ export default function Login() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-muted/40">
-      <img
-        src="/logo.svg"
-        alt="Scrollbrief"
-        className="mb-8 h-10 w-auto object-contain"
-      />
+      <Link href="/stories" className="mb-8">
+        <Logo className="h-10 w-auto" />
+      </Link>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">
@@ -388,6 +381,19 @@ export default function Login() {
           )}
         </CardContent>
       </Card>
+      <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground transition-colors">
+          Privacy Policy
+        </Link>
+        <span>•</span>
+        <Link href="/contact" className="hover:text-foreground transition-colors">
+          Contact Us
+        </Link>
+        <span>•</span>
+        <Link href="/stories" className="hover:text-foreground transition-colors">
+          Stories
+        </Link>
+      </div>
     </div>
   );
 }

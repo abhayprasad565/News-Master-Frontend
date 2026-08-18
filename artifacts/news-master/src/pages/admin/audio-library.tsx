@@ -140,18 +140,18 @@ export default function AdminAudioLibrary() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">
           Audio Library
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Upload licensed songs and tag them for automatic or manual Reel
           selection.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -159,8 +159,8 @@ export default function AdminAudioLibrary() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpload} className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
+            <form onSubmit={handleUpload} className="grid gap-5 grid-cols-1 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label>Audio file</Label>
                 <Input
                   type="file"

@@ -12,17 +12,17 @@ export default function AdminX() {
   const { data: failures, isLoading: failuresLoading } = useGetDeliveries({ platform: 'x', status: 'FAILED', limit: 10 });
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 w-full">
       <div className="flex items-center gap-3">
-        <Twitter className="h-8 w-8 text-foreground" />
+        <Twitter className="h-7 w-7 sm:h-8 sm:w-8 text-foreground shrink-0" />
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">X (Twitter) Operations</h1>
-          <p className="text-muted-foreground mt-1">Manage recent posts and delivery failures for X.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">X (Twitter) Operations</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage recent posts and delivery failures for X.</p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Recent X Posts</CardTitle>

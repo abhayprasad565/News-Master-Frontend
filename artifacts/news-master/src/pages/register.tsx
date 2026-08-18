@@ -8,6 +8,7 @@ import { Link, Redirect, useLocation } from "wouter";
 import { z } from "zod";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
 import {
   Card,
   CardContent,
@@ -116,11 +117,7 @@ export default function Register() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-muted/40 p-4">
       <Link href="/stories" className="mb-8 flex items-center gap-3">
-        <img
-          src="/logo.svg"
-          alt="Scrollbrief"
-          className="h-10 w-auto object-contain"
-        />
+        <Logo className="h-10 w-auto" />
       </Link>
 
       <Card className="w-full max-w-sm">
@@ -240,6 +237,19 @@ export default function Register() {
           </Form>
         </CardContent>
       </Card>
+      <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground transition-colors">
+          Privacy Policy
+        </Link>
+        <span>•</span>
+        <Link href="/contact" className="hover:text-foreground transition-colors">
+          Contact Us
+        </Link>
+        <span>•</span>
+        <Link href="/stories" className="hover:text-foreground transition-colors">
+          Stories
+        </Link>
+      </div>
     </div>
   );
 }

@@ -116,10 +116,19 @@ export default function AdminPostDetail() {
   const [correctionTitle, setCorrectionTitle] = useState("");
   const [correctionText, setCorrectionText] = useState("");
 
+  const {
+    data: detail,
+    isLoading,
+    error,
+  } = useGetAdminPost(id || "", {
+    query: { enabled: !!id } as any,
+  });
+
+  const targetPostId = detail?.id || id;
   const { data: planData, isLoading: planLoading } = useQuery({
-    queryKey: ["publishPlan", id],
-    queryFn: () => apiFetch<any>(`/api/admin/posts/${id}/publish-plan`),
-    enabled: publishOpen && !!id,
+    queryKey: ["publishPlan", targetPostId],
+    queryFn: () => apiFetch<any>(`/api/admin/posts/${targetPostId}/publish-plan`),
+    enabled: publishOpen && !!targetPostId,
   });
 
   useEffect(() => {
@@ -150,14 +159,6 @@ export default function AdminPostDetail() {
     }
     setSensitivityOverride(false);
   }, [planData]);
-
-  const {
-    data: detail,
-    isLoading,
-    error,
-  } = useGetAdminPost(id || "", {
-    query: { enabled: !!id } as any,
-  });
 
   const deleteMutation = useDeletePost({
     mutation: {
@@ -356,11 +357,14 @@ export default function AdminPostDetail() {
 
             return (
               <h1 className="text-3xl font-bold font-serif tracking-tight">
-                {displayTitle || `Post ${detail.id.slice(0, 8)}`}
+                {displayTitle || `Post #${(detail as any).postNumber || detail.id.slice(0, 8)}`}
               </h1>
             );
           })()}
           <div className="flex flex-wrap items-center gap-2 mt-2">
+            <Badge variant="default" className="font-mono font-bold">
+              #{(detail as any).postNumber || detail.id.slice(0, 8)}
+            </Badge>
             <Badge variant="outline">{detail.status}</Badge>
             <Badge variant="secondary">{detail.kind}</Badge>
             {detail.labels.map((l) => (
@@ -371,7 +375,7 @@ export default function AdminPostDetail() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isMutable && (
             <Button variant="outline" asChild>
               <Link href={`/admin/posts/${detail.id}/edit`}>
@@ -472,8 +476,8 @@ export default function AdminPostDetail() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
           </CardHeader>
@@ -577,9 +581,13 @@ export default function AdminPostDetail() {
               <CardTitle className="text-sm font-semibold">Metadata</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between py-1 border-b items-center">
+                <span className="text-muted-foreground">Post #</span>
+                <span className="font-mono font-bold text-primary">#{(detail as any).postNumber || '—'}</span>
+              </div>
               <div className="flex justify-between py-1 border-b">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-mono">{detail.id.slice(0, 8)}...</span>
+                <span className="text-muted-foreground">UUID</span>
+                <span className="font-mono text-xs text-muted-foreground" title={detail.id}>{detail.id.slice(0, 8)}...</span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Created</span>

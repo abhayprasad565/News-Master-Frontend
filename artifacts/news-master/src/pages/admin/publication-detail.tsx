@@ -45,7 +45,7 @@ export default function AdminPublicationDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
         <Link href="/admin/publications" className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Publications
@@ -53,18 +53,18 @@ export default function AdminPublicationDetail() {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight flex items-center">
-          <ScrollText className="mr-3 h-8 w-8 text-muted-foreground" />
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight flex items-center">
+          <ScrollText className="mr-3 h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
           Publication Record
         </h1>
-        <div className="flex flex-wrap items-center gap-4 mt-2 font-mono text-sm text-muted-foreground">
-          <span>ID: {publication.id}</span>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 font-mono text-xs sm:text-sm text-muted-foreground">
+          <span>ID: {publication.id.slice(0, 12)}...</span>
           <span>Rev. v{publication.revision}</span>
           <span>{format(new Date(publication.createdAt), 'MMM d, yyyy HH:mm:ss')}</span>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Associated Post</CardTitle>
@@ -72,13 +72,17 @@ export default function AdminPublicationDetail() {
           <CardContent>
             {post ? (
               <div className="space-y-2">
-                <div className="font-medium text-lg">{post.title || 'Untitled'}</div>
+                <div className="font-medium text-lg flex items-center gap-2">
+                  <span className="font-mono text-primary font-bold">#{(post as any).postNumber || post.id.slice(0, 8)}</span>
+                  <span>{post.title || 'Untitled'}</span>
+                </div>
                 <div className="flex gap-2">
                   <Badge variant="outline">{post.status}</Badge>
                   <Badge variant="secondary">{post.kind}</Badge>
                 </div>
-                <div className="mt-4 pt-4 border-t text-sm font-mono text-muted-foreground">
-                  ID: <Link href={`/admin/posts/${post.id}`} className="text-primary hover:underline">{post.id}</Link>
+                <div className="mt-4 pt-4 border-t text-sm font-mono text-muted-foreground flex items-center justify-between">
+                  <span>Post #{(post as any).postNumber || post.id.slice(0, 8)}</span>
+                  <Link href={`/admin/posts/${post.id}`} className="text-primary hover:underline font-mono text-xs">View Full Post →</Link>
                 </div>
               </div>
             ) : (

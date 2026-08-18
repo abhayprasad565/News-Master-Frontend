@@ -73,17 +73,17 @@ export default function AdminCreatePost() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
         <Link href="/admin/posts" className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Posts
         </Link>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">Create Custom Post</h1>
-          <p className="text-muted-foreground mt-1">Write a new editorial post that will bypass auto-generation.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Create Custom Post</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Write a new editorial post that will bypass auto-generation.</p>
         </div>
       </div>
 

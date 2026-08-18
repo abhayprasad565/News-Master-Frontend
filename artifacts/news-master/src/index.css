@@ -169,6 +169,9 @@
   * {
     @apply border-border;
   }
+  html, body, #root {
+    @apply min-h-screen w-full overflow-x-hidden;
+  }
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }

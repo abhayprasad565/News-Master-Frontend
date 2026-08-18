@@ -225,23 +225,23 @@ export default function AdminEditPost() {
     : 120;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
         <Link href={`/admin/posts/${post.id}`} className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Post
         </Link>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">
-            Edit Post
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight flex items-center gap-2 flex-wrap">
+            Edit Post <span className="text-primary font-mono font-normal text-xl sm:text-2xl">#{(post as any).postNumber || post.id.slice(0, 8)}</span>
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Make changes to this {post.kind.toLowerCase()} post.
           </p>
         </div>
-        <Badge variant="outline" className="text-sm px-3 py-1">
+        <Badge variant="outline" className="text-sm px-3 py-1 self-start sm:self-auto">
           {post.status}
         </Badge>
       </div>
