@@ -107,13 +107,13 @@ export default function AdminLabelList() {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">Labels</h1>
-          <p className="text-muted-foreground mt-1">Manage taxonomy and categorization for stories.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Labels</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage taxonomy and categorization for stories.</p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="self-start sm:self-auto">
           <Plus className="h-4 w-4 mr-2" />
           Create Label
         </Button>

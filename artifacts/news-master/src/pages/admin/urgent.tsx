@@ -49,18 +49,18 @@ export default function AdminUrgent() {
   const enabled = mode === 'enabled';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Urgent Queue</h1>
-          <p className="mt-1 text-muted-foreground">Urgent candidates, shadow decisions, blockers, cooldowns, and automatic-posting caps.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Urgent Queue</h1>
+          <p className="mt-1 text-muted-foreground text-sm sm:text-base">Urgent candidates, shadow decisions, blockers, cooldowns, and automatic-posting caps.</p>
         </div>
-        <Badge variant={enabled ? 'default' : 'secondary'} className="text-sm">
+        <Badge variant={enabled ? 'default' : 'secondary'} className="text-sm self-start sm:self-auto">
           {enabled ? 'Enabled mode' : 'Shadow mode'}
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <StatusCard title="Daily cap" value={`${data?.dailyCapUsed ?? 0}/${data?.dailyCap ?? 20}`} icon={<Rocket className="h-4 w-4" />} />
         <StatusCard title="Global cooldown" value={`${data?.globalCooldownMinutes ?? 15} min`} icon={<Clock className="h-4 w-4" />} />
         <StatusCard title="Event cooldown" value={`${data?.eventCooldownHours ?? 4} hr`} icon={<ShieldAlert className="h-4 w-4" />} />
@@ -79,9 +79,78 @@ export default function AdminUrgent() {
         </Card>
       )}
 
-      <Card className="overflow-hidden">
-        <div className="overflow-auto">
-          <table className="w-full min-w-[960px] text-left text-sm">
+      <Card className="overflow-hidden w-full">
+        {/* Mobile View */}
+        <div className="block md:hidden divide-y">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="p-4 space-y-3">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            ))
+          ) : error ? (
+            <div className="p-8 text-center text-destructive">Failed to load urgent queue.</div>
+          ) : !data?.items?.length ? (
+            <div className="p-12 text-center text-muted-foreground">No urgent candidates.</div>
+          ) : (
+            data.items.map((item) => {
+              const id = item.assessmentId || item.id;
+              const blocked = item.decision === 'BLOCKED' || Boolean(item.sensitiveBlockers?.length);
+              const isUuid = (str?: string) => !str || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+              const candidateTitle = !isUuid(item.title)
+                ? item.title!
+                : !isUuid(item.summary)
+                  ? item.summary!
+                  : `Candidate ${id.slice(0, 8)}`;
+              return (
+                <div key={id} className={`p-4 space-y-3 ${blocked ? 'bg-destructive/5' : 'hover:bg-muted/20'} transition-colors`}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <Badge variant={blocked ? 'destructive' : item.decision === 'PUBLISHED' ? 'default' : 'secondary'}>
+                      {item.decision || 'REVIEW_REQUIRED'}
+                    </Badge>
+                    <span className="font-mono font-bold text-sm">Score: {item.score ?? '-'} ({Math.round((item.confidence || 0) * 100)}%)</span>
+                  </div>
+
+                  <Link href={`/admin/ranking/${id}`} className="font-semibold text-base block hover:underline text-foreground leading-snug">
+                    {candidateTitle}
+                  </Link>
+
+                  {(item.sensitiveBlockers || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {item.sensitiveBlockers!.map((blocker) => <Badge key={blocker} variant="destructive" className="text-[11px]">{blocker}</Badge>)}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-md">
+                    <div>
+                      <span className="text-muted-foreground">Age:</span> {item.ageMinutes ?? '-'} min
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Cooldown:</span> {item.globalCooldownRemainingSeconds ?? 0}s
+                    </div>
+                    <div className="col-span-2 flex items-center gap-3 pt-1">
+                      <Readiness label="Sources" ready={item.sourceSufficient} />
+                      <Readiness label="Graphic" ready={item.graphicReady} />
+                      <Readiness label="Cap" ready={(item.dailyCapUsed ?? 0) < (item.dailyCap ?? data.dailyCap ?? 6)} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end pt-1">
+                    <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs w-full sm:w-auto">
+                      <Link href={`/admin/ranking/${id}`}>Inspect Candidate</Link>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto w-full">
+          <table className="w-full text-left text-sm table-auto">
             <thead className="border-b bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">Candidate</th>

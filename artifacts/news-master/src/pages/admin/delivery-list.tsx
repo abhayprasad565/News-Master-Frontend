@@ -23,7 +23,11 @@ export default function AdminDeliveryList() {
     switch (s) {
       case 'SENT': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Sent</Badge>;
       case 'FAILED': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Failed</Badge>;
+      case 'DEAD': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Dead</Badge>;
       case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
+      case 'WAITING_FOR_ASSET': return <Badge variant="outline" className="border-slate-500 text-slate-600">Waiting for asset</Badge>;
+      case 'RENDERING': return <Badge variant="outline" className="border-indigo-500 text-indigo-600">Rendering</Badge>;
+      case 'READY': return <Badge variant="outline" className="border-cyan-500 text-cyan-600">Ready</Badge>;
       case 'SENDING': return <Badge variant="outline" className="border-blue-500 text-blue-600">Sending...</Badge>;
       case 'RETRY': return <Badge variant="outline" className="border-amber-500 text-amber-600">Retry</Badge>;
       case 'UNKNOWN': return <Badge variant="outline" className="border-purple-500 text-purple-600">Unknown</Badge>;
@@ -32,15 +36,15 @@ export default function AdminDeliveryList() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">Deliveries</h1>
-        <p className="text-muted-foreground mt-1">Monitor the status of content pushed to external platforms.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Deliveries</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Monitor the status of content pushed to external platforms.</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -52,7 +56,7 @@ export default function AdminDeliveryList() {
         </Select>
 
         <Select value={platform} onValueChange={setPlatform}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Platform" />
           </SelectTrigger>
           <SelectContent>
@@ -72,6 +76,7 @@ export default function AdminDeliveryList() {
             <thead className="bg-muted/50 text-muted-foreground border-b">
               <tr>
                 <th className="px-4 py-3 font-medium">Platform</th>
+                <th className="px-4 py-3 font-medium w-24">Format</th>
                 <th className="px-4 py-3 font-medium">Destination</th>
                 <th className="px-4 py-3 font-medium w-32">Status</th>
                 <th className="px-4 py-3 font-medium w-24">Attempts</th>
@@ -84,6 +89,7 @@ export default function AdminDeliveryList() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
                     <td className="px-4 py-4"><Skeleton className="h-5 w-20" /></td>
+                    <td className="px-4 py-4"><Skeleton className="h-5 w-16" /></td>
                     <td className="px-4 py-4"><Skeleton className="h-5 w-32" /></td>
                     <td className="px-4 py-4"><Skeleton className="h-5 w-24" /></td>
                     <td className="px-4 py-4"><Skeleton className="h-5 w-8" /></td>
@@ -93,13 +99,13 @@ export default function AdminDeliveryList() {
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-destructive">
+                  <td colSpan={7} className="px-4 py-8 text-center text-destructive">
                     Failed to load deliveries.
                   </td>
                 </tr>
               ) : !data?.items?.length ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
+                  <td colSpan={7} className="px-4 py-12 text-center">
                     <Send className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                     <p className="font-medium">No deliveries found</p>
                     <p className="text-sm text-muted-foreground">Try adjusting your filters.</p>
@@ -109,6 +115,11 @@ export default function AdminDeliveryList() {
                 data.items.map((del) => (
                   <tr key={del.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium capitalize">{del.platform}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={del.format === 'REEL' ? 'default' : 'outline'} className="text-[10px]">
+                        {del.format ?? 'IMAGE'}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs">{del.destination || '-'}</td>
                     <td className="px-4 py-3">{getDeliveryStatusBadge(del.status)}</td>
                     <td className="px-4 py-3 text-center">{del.attemptCount}</td>

@@ -74,7 +74,11 @@ export default function AdminDeliveryDetail() {
     switch (s) {
       case 'SENT': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Sent</Badge>;
       case 'FAILED': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Failed</Badge>;
+      case 'DEAD': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Dead</Badge>;
       case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
+      case 'WAITING_FOR_ASSET': return <Badge variant="outline" className="border-slate-500 text-slate-600">Waiting for asset</Badge>;
+      case 'RENDERING': return <Badge variant="outline" className="border-indigo-500 text-indigo-600">Rendering</Badge>;
+      case 'READY': return <Badge variant="outline" className="border-cyan-500 text-cyan-600">Ready</Badge>;
       case 'SENDING': return <Badge variant="outline" className="border-blue-500 text-blue-600">Sending...</Badge>;
       case 'RETRY': return <Badge variant="outline" className="border-amber-500 text-amber-600">Retry</Badge>;
       case 'UNKNOWN': return <Badge variant="outline" className="border-purple-500 text-purple-600">Unknown</Badge>;
@@ -82,7 +86,7 @@ export default function AdminDeliveryDetail() {
     }
   };
 
-  const showRetry = delivery.status === 'FAILED' || delivery.status === 'RETRY';
+  const showRetry = delivery.status === 'FAILED' || delivery.status === 'RETRY' || delivery.status === 'DEAD';
   const showReconcile = delivery.status === 'UNKNOWN';
 
   const handleRetry = () => {
@@ -98,17 +102,17 @@ export default function AdminDeliveryDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
         <Link href="/admin/deliveries" className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Deliveries
         </Link>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight flex items-center">
-            <Send className="mr-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight flex items-center">
+            <Send className="mr-3 h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
             Delivery Details
           </h1>
           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -117,7 +121,7 @@ export default function AdminDeliveryDetail() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {showRetry && (
             <Dialog open={retryOpen} onOpenChange={setRetryOpen}>
               <DialogTrigger asChild>
@@ -201,6 +205,10 @@ export default function AdminDeliveryDetail() {
               <span className="font-mono">{delivery.destination || 'Default'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
+              <span className="text-muted-foreground">Format</span>
+              <Badge variant={delivery.format === 'REEL' ? 'default' : 'outline'}>{delivery.format ?? 'IMAGE'}</Badge>
+            </div>
+            <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Attempts</span>
               <span className="font-medium">{delivery.attemptCount}</span>
             </div>
@@ -235,8 +243,9 @@ export default function AdminDeliveryDetail() {
             {post && (
               <div className="flex flex-col border-b pb-2">
                 <span className="text-muted-foreground text-xs mb-1">Post</span>
-                <Link href={`/admin/posts/${post.id}`} className="text-primary hover:underline font-medium line-clamp-1">
-                  {post.title || post.id}
+                <Link href={`/admin/posts/${post.id}`} className="text-primary hover:underline font-medium line-clamp-1 flex items-center gap-1.5">
+                  <span className="font-mono font-bold">#{(post as any).postNumber || post.id.slice(0, 8)}:</span>
+                  <span>{post.title || `Post #${(post as any).postNumber || post.id.slice(0, 8)}`}</span>
                 </Link>
               </div>
             )}

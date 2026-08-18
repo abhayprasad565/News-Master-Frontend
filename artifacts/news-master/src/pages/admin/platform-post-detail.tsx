@@ -38,6 +38,7 @@ export default function AdminPlatformPostDetail() {
           </h1>
           <div className="flex items-center gap-2 mt-2 font-mono text-sm text-muted-foreground">
             <Badge variant="outline" className="capitalize">{pp.platform}</Badge>
+            <Badge variant={pp.format === 'REEL' ? 'default' : 'secondary'}>{pp.format ?? 'IMAGE'}</Badge>
             <span>{format(new Date(pp.createdAt), 'MMM d, yyyy HH:mm')}</span>
           </div>
         </div>
@@ -63,7 +64,11 @@ export default function AdminPlatformPostDetail() {
                   <ImageIcon className="h-4 w-4 mr-2" /> Attached Media
                 </h4>
                 <div className="border rounded-md overflow-hidden bg-muted inline-block max-w-sm">
-                  <img src={pp.mediaUrl} alt="Platform Media" className="w-full object-cover" />
+                  {pp.format === 'REEL' ? (
+                    <video src={pp.mediaUrl} controls className="w-full object-cover" />
+                  ) : (
+                    <img src={pp.mediaUrl} alt="Platform Media" className="w-full object-cover" />
+                  )}
                 </div>
               </div>
             )}
@@ -93,6 +98,26 @@ export default function AdminPlatformPostDetail() {
               <span className="text-muted-foreground text-xs">Published At</span>
               <span className="font-medium">{pp.publishedAt ? format(new Date(pp.publishedAt), 'MMM d, HH:mm:ss') : 'N/A'}</span>
             </div>
+            {pp.format === 'REEL' && (
+              <div className="grid grid-cols-2 gap-2 rounded-md border bg-muted/30 p-3 text-xs">
+                <div>
+                  <span className="block text-muted-foreground">Audio track</span>
+                  <span className="font-mono">{pp.audioTrackId || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="block text-muted-foreground">Source</span>
+                  <span className="font-mono">{pp.audioSource || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="block text-muted-foreground">Segment</span>
+                  <span>{pp.audioStartSeconds ?? 0}s → {(pp.audioStartSeconds ?? 0) + (pp.reelDurationSeconds ?? 0)}s</span>
+                </div>
+                <div>
+                  <span className="block text-muted-foreground">Volume</span>
+                  <span>{pp.audioVolume ?? 'N/A'}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

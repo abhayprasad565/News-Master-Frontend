@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="320" height="56" viewBox="0 0 320 56">
-  <text x="0" y="41" fill="#F3F1EA" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700">scrollbrief</text>
+  <style>
+    .brand-text { fill: #111827; }
+    .brand-subtext { fill: #4B5563; }
+    @media (prefers-color-scheme: dark) {
+      .brand-text { fill: #F3F1EA; }
+      .brand-subtext { fill: #DCD9CF; }
+    }
+  </style>
+  <text x="0" y="41" class="brand-text" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700">scrollbrief</text>
   <circle cx="213" cy="36" r="5.5" fill="#E53935"/>
-  <text x="225" y="40" fill="#DCD9CF" font-family="Menlo, Consolas, monospace" font-size="23" font-weight="500">in</text>
+  <text x="225" y="40" class="brand-subtext" font-family="Menlo, Consolas, monospace" font-size="23" font-weight="500">in</text>
 </svg>

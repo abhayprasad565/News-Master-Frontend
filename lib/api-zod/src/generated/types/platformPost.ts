@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { JsonObject } from './jsonObject';
+import type { PlatformPostFormat } from './platformPostFormat';
 
 export interface PlatformPost {
   id: string;
@@ -26,6 +27,21 @@ export interface PlatformPost {
   content?: string | null;
   /** @nullable */
   mediaUrl?: string | null;
+  format: PlatformPostFormat;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioStorageKey?: string | null;
+  /** @nullable */
+  audioSource?: string | null;
+  /** @nullable */
+  audioNormalizedSha256?: string | null;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
   requestPayload?: JsonObject;
   responsePayload?: JsonObject;
   /** @nullable */

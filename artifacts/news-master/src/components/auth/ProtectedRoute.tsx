@@ -1,7 +1,7 @@
-import { ReactNode } from 'react';
-import { useGetMe, UserSessionRole } from '@workspace/api-client-react';
-import { Redirect, useLocation } from 'wouter';
-import { Loader2 } from 'lucide-react';
+import { ReactNode } from "react";
+import { useGetMe, UserSessionRole } from "@workspace/api-client-react";
+import { Redirect, useLocation } from "wouter";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -21,11 +21,20 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   }
 
   if (error || !data?.user) {
-    return <Redirect to={location.startsWith('/admin') ? '/admin/login' : '/login'} />;
+    return (
+      <Redirect
+        to={location.startsWith("/admin") ? "/admin/login" : "/login"}
+      />
+    );
   }
 
-  if (requireRole && data.user.role !== requireRole) {
-    return <Redirect to={data.user.role === 'admin' ? '/admin' : '/stories'} />;
+  const actualRole = (data.user as any).role as string;
+  const hasRequiredRole =
+    !requireRole ||
+    data.user.role === requireRole ||
+    (requireRole === "admin" && actualRole === "owner");
+  if (!hasRequiredRole) {
+    return <Redirect to={actualRole === "reader" ? "/stories" : "/admin"} />;
   }
 
   return <>{children}</>;

@@ -10,6 +10,8 @@ export type MeResponseUserRole = typeof MeResponseUserRole[keyof typeof MeRespon
 
 
 export const MeResponseUserRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;

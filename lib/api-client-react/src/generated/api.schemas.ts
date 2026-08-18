@@ -46,7 +46,9 @@ export type UserSessionRole = typeof UserSessionRole[keyof typeof UserSessionRol
 
 
 export const UserSessionRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;
 
@@ -63,7 +65,9 @@ export type MeResponseUserRole = typeof MeResponseUserRole[keyof typeof MeRespon
 
 
 export const MeResponseUserRole = {
+  owner: 'owner',
   admin: 'admin',
+  moderator: 'moderator',
   reader: 'reader',
 } as const;
 
@@ -169,10 +173,24 @@ export interface PlatformLink {
   remoteId?: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
+
+
+export const StoryMediaType = {
+  GRAPHIC: 'GRAPHIC',
+  TEXT_ONLY: 'TEXT_ONLY',
+  REEL: 'REEL',
+} as const;
+
 export interface StoryMedia {
   url: string;
   /** @nullable */
-  type?: string | null;
+  type?: StoryMediaType;
+  /** @nullable */
+  mimeType?: string | null;
 }
 
 export type StoryKind = typeof StoryKind[keyof typeof StoryKind];
@@ -199,6 +217,12 @@ export interface Story {
   platformLinks: PlatformLink[];
   /** @nullable */
   correctionOfPostId?: string | null;
+  /** @minimum 0 */
+  likeCount: number;
+  /** @minimum 0 */
+  commentCount: number;
+  likedByMe: boolean;
+  savedByMe: boolean;
 }
 
 export interface StoryList {
@@ -273,11 +297,23 @@ export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
 
 export const DeliveryStatus = {
   PENDING: 'PENDING',
+  WAITING_FOR_ASSET: 'WAITING_FOR_ASSET',
+  RENDERING: 'RENDERING',
+  READY: 'READY',
   SENDING: 'SENDING',
   SENT: 'SENT',
   RETRY: 'RETRY',
   FAILED: 'FAILED',
+  DEAD: 'DEAD',
   UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type DeliveryFormat = typeof DeliveryFormat[keyof typeof DeliveryFormat];
+
+
+export const DeliveryFormat = {
+  IMAGE: 'IMAGE',
+  REEL: 'REEL',
 } as const;
 
 export interface Delivery {
@@ -289,6 +325,7 @@ export interface Delivery {
   /** @nullable */
   idempotencyKey?: string | null;
   status: DeliveryStatus;
+  format: DeliveryFormat;
   attemptCount: number;
   /** @nullable */
   lastError?: string | null;
@@ -315,6 +352,25 @@ export const AdminPostDetailStatus = {
   MANUAL_REVIEW: 'MANUAL_REVIEW',
   REJECTED: 'REJECTED',
   PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type AdminPostDetailGraphicSourceMode = typeof AdminPostDetailGraphicSourceMode[keyof typeof AdminPostDetailGraphicSourceMode];
+
+
+export const AdminPostDetailGraphicSourceMode = {
+  AUTO: 'AUTO',
+  NO_SOURCE_IMAGE: 'NO_SOURCE_IMAGE',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AdminPostDetailAudioSelectionMode = typeof AdminPostDetailAudioSelectionMode[keyof typeof AdminPostDetailAudioSelectionMode] | null;
+
+
+export const AdminPostDetailAudioSelectionMode = {
+  AUTO: 'AUTO',
+  MANUAL: 'MANUAL',
 } as const;
 
 export interface AdminPostDetail {
@@ -344,10 +400,36 @@ export interface AdminPostDetail {
   archivedAt?: string | null;
   /** @nullable */
   sourceImageKey?: string | null;
+  graphicSourceMode?: AdminPostDetailGraphicSourceMode;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioSelectionMode?: AdminPostDetailAudioSelectionMode;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
   publication?: Publication;
   /** @nullable */
   deliveries?: Delivery[] | null;
 }
+
+/**
+ * @nullable
+ */
+export type PostInputAudioSelectionMode = typeof PostInputAudioSelectionMode[keyof typeof PostInputAudioSelectionMode] | null;
+
+
+export const PostInputAudioSelectionMode = {
+  AUTO: 'AUTO',
+  MANUAL: 'MANUAL',
+} as const;
 
 export interface PostInput {
   /** @nullable */
@@ -362,7 +444,34 @@ export interface PostInput {
      * @nullable
      */
   imageBase64?: string | null;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioTrackKey?: string | null;
+  /** @nullable */
+  audioSelectionMode?: PostInputAudioSelectionMode;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }
+
+/**
+ * @nullable
+ */
+export type PostUpdateAudioSelectionMode = typeof PostUpdateAudioSelectionMode[keyof typeof PostUpdateAudioSelectionMode] | null;
+
+
+export const PostUpdateAudioSelectionMode = {
+  AUTO: 'AUTO',
+  MANUAL: 'MANUAL',
+} as const;
 
 export interface PostUpdate {
   /** @nullable */
@@ -378,6 +487,22 @@ export interface PostUpdate {
      * @nullable
      */
   imageBase64?: string | null;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioTrackKey?: string | null;
+  /** @nullable */
+  audioSelectionMode?: PostUpdateAudioSelectionMode;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
+  /** @nullable */
+  reelFadeInSeconds?: number | null;
+  /** @nullable */
+  reelFadeOutSeconds?: number | null;
 }
 
 export type DestinationPlatform = typeof DestinationPlatform[keyof typeof DestinationPlatform];
@@ -391,9 +516,18 @@ export const DestinationPlatform = {
   whatsapp: 'whatsapp',
 } as const;
 
+export type DestinationFormat = typeof DestinationFormat[keyof typeof DestinationFormat];
+
+
+export const DestinationFormat = {
+  IMAGE: 'IMAGE',
+  REEL: 'REEL',
+} as const;
+
 export interface Destination {
   platform: DestinationPlatform;
   destination: string;
+  format?: DestinationFormat;
 }
 
 export interface PublishInput {
@@ -571,6 +705,14 @@ export interface ReconcileInput {
   reason: string;
 }
 
+export type PlatformPostFormat = typeof PlatformPostFormat[keyof typeof PlatformPostFormat];
+
+
+export const PlatformPostFormat = {
+  IMAGE: 'IMAGE',
+  REEL: 'REEL',
+} as const;
+
 export interface PlatformPost {
   id: string;
   /** @nullable */
@@ -590,6 +732,21 @@ export interface PlatformPost {
   content?: string | null;
   /** @nullable */
   mediaUrl?: string | null;
+  format: PlatformPostFormat;
+  /** @nullable */
+  audioTrackId?: string | null;
+  /** @nullable */
+  audioStorageKey?: string | null;
+  /** @nullable */
+  audioSource?: string | null;
+  /** @nullable */
+  audioNormalizedSha256?: string | null;
+  /** @nullable */
+  audioStartSeconds?: number | null;
+  /** @nullable */
+  audioVolume?: number | null;
+  /** @nullable */
+  reelDurationSeconds?: number | null;
   requestPayload?: JsonObject;
   responsePayload?: JsonObject;
   /** @nullable */

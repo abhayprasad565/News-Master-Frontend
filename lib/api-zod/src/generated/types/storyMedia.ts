@@ -5,9 +5,12 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StoryMediaType } from './storyMediaType';
 
 export interface StoryMedia {
   url: string;
   /** @nullable */
-  type?: string | null;
+  type?: StoryMediaType;
+  /** @nullable */
+  mimeType?: string | null;
 }

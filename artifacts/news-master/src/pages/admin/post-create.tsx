@@ -73,17 +73,17 @@ export default function AdminCreatePost() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
         <Link href="/admin/posts" className="flex items-center">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Posts
         </Link>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif tracking-tight">Create Custom Post</h1>
-          <p className="text-muted-foreground mt-1">Write a new editorial post that will bypass auto-generation.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Create Custom Post</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Write a new editorial post that will bypass auto-generation.</p>
         </div>
       </div>
 
@@ -150,28 +150,50 @@ export default function AdminCreatePost() {
                     <FormItem>
                       <FormLabel>Background Image (Optional)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const result = event.target?.result as string;
-                                // result is data:image/jpeg;base64,...
-                                const base64 = result.split(',')[1];
-                                onChange(base64);
-                              };
-                              reader.readAsDataURL(file);
-                            } else {
-                              onChange(undefined);
-                            }
-                          }}
-                          {...field} 
-                        />
+                        <div className="space-y-3">
+                          <Input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const result = event.target?.result as string;
+                                  const base64 = result.split(',')[1];
+                                  onChange(base64);
+                                };
+                                reader.readAsDataURL(file);
+                              } else {
+                                onChange(undefined);
+                              }
+                            }}
+                            {...field} 
+                          />
+                          {value && (
+                            <div className="relative rounded-lg border bg-muted/40 p-2 max-w-xs">
+                              <img 
+                                src={`data:image/jpeg;base64,${value}`} 
+                                alt="Uploaded background preview" 
+                                className="w-full h-36 object-cover rounded-md"
+                              />
+                              <div className="flex items-center justify-between mt-2 px-1 text-xs text-muted-foreground">
+                                <span>Custom image ready for rendering</span>
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 text-xs text-destructive hover:text-destructive"
+                                  onClick={() => onChange(undefined)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
-                      <FormDescription>Upload a custom background image. Minimum 600x400.</FormDescription>
+                      <FormDescription>Upload a custom background image (min 600x400). It will be rendered into official 4:5 graphics & 9:16 Reels.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -204,13 +226,17 @@ export default function AdminCreatePost() {
                 />
               </div>
 
-              <div className="flex justify-end pt-6 border-t gap-4">
+              <div className="flex justify-end pt-6 border-t gap-3">
                 <Button variant="outline" asChild>
                   <Link href="/admin/posts">Cancel</Link>
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save as Draft
+                <Button type="submit" disabled={createMutation.isPending} className="bg-primary">
+                  {createMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save & Render Post
                 </Button>
               </div>
             </form>

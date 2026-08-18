@@ -36,13 +36,13 @@ export default function AdminDashboard() {
   const suppressedCount = rankingData?.items.filter((item) => item.tier === 'SUPPRESSED' || item.developmentType === 'DUPLICATE' || item.developmentType === 'MINOR_UPDATE').length || 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 w-full">
       <div>
-        <h1 className="text-3xl font-bold font-serif tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Overview of editorial operations and status.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Overview of editorial operations and status.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card className={urgentCount > 0 ? "border-red-200 bg-red-50/30" : ""}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Urgent Candidates</CardTitle>
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Recent Posts</CardTitle>
@@ -137,8 +137,9 @@ export default function AdminDashboard() {
                 {postsData.items.map(post => (
                   <div key={post.id} className="flex items-center justify-between border-b last:border-0 pb-4 last:pb-0">
                     <div>
-                      <div className="font-medium hover:underline cursor-pointer">
-                        <Link href={`/admin/posts/${post.id}`}>{post.title || 'Untitled Post'}</Link>
+                      <div className="font-medium hover:underline cursor-pointer flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-bold text-primary">#{(post as any).postNumber || post.id.slice(0, 6)}</span>
+                        <Link href={`/admin/posts/${post.id}`}>{post.title || `Post #${(post as any).postNumber || post.id.slice(0, 6)}`}</Link>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1 flex gap-2 items-center">
                         <Badge variant="outline" className="text-[10px] py-0">{post.status}</Badge>

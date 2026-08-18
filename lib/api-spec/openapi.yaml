@@ -993,7 +993,7 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, reader]
+          enum: [owner, admin, moderator, reader]
       required:
         - email
         - role
@@ -1016,7 +1016,7 @@ components:
               type: string
             role:
               type: string
-              enum: [admin, reader]
+              enum: [owner, admin, moderator, reader]
       required:
         - user
 
@@ -1129,6 +1129,9 @@ components:
           type: string
         type:
           type: ["string", "null"]
+          enum: [GRAPHIC, TEXT_ONLY, REEL, null]
+        mimeType:
+          type: ["string", "null"]
       required:
         - url
 
@@ -1162,6 +1165,16 @@ components:
             $ref: "#/components/schemas/PlatformLink"
         correctionOfPostId:
           type: ["string", "null"]
+        likeCount:
+          type: number
+          minimum: 0
+        commentCount:
+          type: number
+          minimum: 0
+        likedByMe:
+          type: boolean
+        savedByMe:
+          type: boolean
       required:
         - id
         - kind
@@ -1169,6 +1182,10 @@ components:
         - labels
         - media
         - platformLinks
+        - likeCount
+        - commentCount
+        - likedByMe
+        - savedByMe
 
     StoryList:
       type: object
@@ -1194,7 +1211,8 @@ components:
           enum: [ORIGINAL, CORRECTION, CUSTOM]
         status:
           type: string
-          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+          enum:
+            [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
         title:
           type: ["string", "null"]
         text:
@@ -1273,7 +1291,22 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [PENDING, SENDING, SENT, RETRY, FAILED, UNKNOWN]
+          enum:
+            [
+              PENDING,
+              WAITING_FOR_ASSET,
+              RENDERING,
+              READY,
+              SENDING,
+              SENT,
+              RETRY,
+              FAILED,
+              DEAD,
+              UNKNOWN,
+            ]
+        format:
+          type: string
+          enum: [IMAGE, REEL]
         attemptCount:
           type: number
         lastError:
@@ -1285,6 +1318,7 @@ components:
         - publicationId
         - platform
         - status
+        - format
         - attemptCount
 
     AdminPostDetail:
@@ -1299,7 +1333,8 @@ components:
           enum: [ORIGINAL, CORRECTION, CUSTOM]
         status:
           type: string
-          enum: [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
+          enum:
+            [DRAFT, VALIDATING, VALIDATED, MANUAL_REVIEW, REJECTED, PUBLISHED]
         title:
           type: ["string", "null"]
         text:
@@ -1328,6 +1363,24 @@ components:
           type: ["string", "null"]
         sourceImageKey:
           type: ["string", "null"]
+        graphicSourceMode:
+          type: string
+          enum: [AUTO, NO_SOURCE_IMAGE]
+        audioTrackId:
+          type: ["string", "null"]
+        audioSelectionMode:
+          type: ["string", "null"]
+          enum: [AUTO, MANUAL, null]
+        audioStartSeconds:
+          type: ["number", "null"]
+        audioVolume:
+          type: ["number", "null"]
+        reelDurationSeconds:
+          type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
+          type: ["number", "null"]
         publication:
           $ref: "#/components/schemas/Publication"
         deliveries:
@@ -1359,6 +1412,23 @@ components:
         imageBase64:
           type: ["string", "null"]
           maxLength: 10485760
+        audioTrackId:
+          type: ["string", "null"]
+        audioTrackKey:
+          type: ["string", "null"]
+        audioSelectionMode:
+          type: ["string", "null"]
+          enum: [AUTO, MANUAL, null]
+        audioStartSeconds:
+          type: ["number", "null"]
+        audioVolume:
+          type: ["number", "null"]
+        reelDurationSeconds:
+          type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
+          type: ["number", "null"]
 
     PostUpdate:
       type: object
@@ -1376,6 +1446,23 @@ components:
         imageBase64:
           type: ["string", "null"]
           maxLength: 10485760
+        audioTrackId:
+          type: ["string", "null"]
+        audioTrackKey:
+          type: ["string", "null"]
+        audioSelectionMode:
+          type: ["string", "null"]
+          enum: [AUTO, MANUAL, null]
+        audioStartSeconds:
+          type: ["number", "null"]
+        audioVolume:
+          type: ["number", "null"]
+        reelDurationSeconds:
+          type: ["number", "null"]
+        reelFadeInSeconds:
+          type: ["number", "null"]
+        reelFadeOutSeconds:
+          type: ["number", "null"]
 
     Destination:
       type: object
@@ -1386,6 +1473,9 @@ components:
           enum: [telegram, instagram, x, webhook, whatsapp]
         destination:
           type: string
+        format:
+          type: string
+          enum: [IMAGE, REEL]
 
     PublishInput:
       type: object
@@ -1689,6 +1779,23 @@ components:
           type: ["string", "null"]
         mediaUrl:
           type: ["string", "null"]
+        format:
+          type: string
+          enum: [IMAGE, REEL]
+        audioTrackId:
+          type: ["string", "null"]
+        audioStorageKey:
+          type: ["string", "null"]
+        audioSource:
+          type: ["string", "null"]
+        audioNormalizedSha256:
+          type: ["string", "null"]
+        audioStartSeconds:
+          type: ["number", "null"]
+        audioVolume:
+          type: ["number", "null"]
+        reelDurationSeconds:
+          type: ["number", "null"]
         requestPayload:
           $ref: "#/components/schemas/JsonObject"
         responsePayload:
@@ -1700,6 +1807,7 @@ components:
       required:
         - id
         - platform
+        - format
         - createdAt
 
     PlatformPostList:
