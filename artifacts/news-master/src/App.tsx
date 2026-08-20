@@ -60,6 +60,10 @@ function RootRedirect() {
   return <Redirect to="/stories" />;
 }
 
+function LegacyAdminLoginRedirect() {
+  return <Redirect to="/login" />;
+}
+
 function PageTracker() {
   usePageTracking();
   return null;
@@ -75,7 +79,7 @@ function App() {
             <Switch>
               <Route path="/marriage-invitation" component={MarriageInvitation} />
               <Route path="/login" component={Login} />
-              <Route path="/admin/login" component={Login} />
+              <Route path="/admin/login" component={LegacyAdminLoginRedirect} />
               <Route path="/register" component={Register} />
               <Route path="/verify-email" component={VerifyEmail} />
               <Route path="/forgot-password" component={ForgotPassword} />

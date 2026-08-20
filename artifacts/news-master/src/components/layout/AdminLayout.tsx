@@ -33,6 +33,7 @@ import {
 
 const adminNav = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Stories", href: "/stories", icon: Newspaper },
   { name: "Traffic", href: "/admin/traffic", icon: TrendingUp },
   { name: "Ranking", href: "/admin/ranking", icon: BarChart3 },
   { name: "Autopilot", href: "/admin/autopilot", icon: Bot },
@@ -116,6 +117,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-1.5">
+            <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs">
+              <Link href="/stories" aria-label="Stories">
+                <Newspaper className="h-4 w-4" />
+              </Link>
+            </Button>
             <ThemeToggle />
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -141,7 +147,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <h1 className="text-sm font-medium text-muted-foreground">
             Admin Portal
           </h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" asChild className="h-8 gap-1.5 text-xs">
+              <Link href="/stories">
+                <Newspaper className="h-3.5 w-3.5" />
+                <span>View Stories</span>
+              </Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Page Content Container */}

@@ -1,15 +1,18 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useGetMe } from '@workspace/api-client-react';
-import { User } from 'lucide-react';
+import { ShieldCheck, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/layout/Footer';
+import { canAccessAdmin, destinationForRole, type WebRole } from '@/lib/role-policy';
 
 export function ReaderLayout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { data: me } = useGetMe();
+  const role = me?.user?.role as WebRole | undefined;
+  const showAdminPanel = role ? canAccessAdmin(role) : false;
 
   const isStoriesActive = location.startsWith('/stories') || location.startsWith('/labels');
   const isPrivacyActive = location === '/privacy';
@@ -21,7 +24,7 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
         {/* Main Header Bar: Logo on left, Theme & Auth on right */}
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 max-w-5xl mx-auto w-full">
           <div className="flex items-center gap-4 sm:gap-6">
-            <Link href={me?.user?.role === 'admin' ? '/admin' : '/stories'} className="flex items-center gap-2">
+            <Link href={role ? destinationForRole(role) : '/stories'} className="flex items-center gap-2">
               <Logo className="h-7 sm:h-8 w-auto" />
             </Link>
             
@@ -55,6 +58,14 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3">
+            {showAdminPanel && (
+              <Button variant="outline" size="sm" asChild className="h-9 px-2 sm:px-3">
+                <Link href="/admin" aria-label="Admin Panel">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin Panel</span>
+                </Link>
+              </Button>
+            )}
             <ThemeToggle />
 
             {me?.user ? (
@@ -120,4 +131,3 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

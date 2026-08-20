@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 type TurnstileAction =
-  "register" | "reader_login" | "password_recovery" | "admin_login";
+  | "register"
+  | "login"
+  | "reader_login"
+  | "password_recovery"
+  | "admin_login";
 
 type TurnstileApi = {
   render(

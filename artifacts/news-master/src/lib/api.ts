@@ -25,13 +25,17 @@ type RequestOptions = RequestInit & {
 const CSRF_STORAGE_KEY = "scrollbrief.csrf";
 
 export function setCsrfToken(token: string | null): void {
+  if (typeof sessionStorage === "undefined") return;
   if (token) sessionStorage.setItem(CSRF_STORAGE_KEY, token);
   else sessionStorage.removeItem(CSRF_STORAGE_KEY);
 }
 
-async function csrfToken(): Promise<string> {
-  const cached = sessionStorage.getItem(CSRF_STORAGE_KEY);
-  if (cached) return cached;
+async function csrfToken(forceFresh = false): Promise<string> {
+  if (typeof sessionStorage !== "undefined" && !forceFresh) {
+    const cached = sessionStorage.getItem(CSRF_STORAGE_KEY);
+    if (cached) return cached;
+  }
+  setCsrfToken(null);
   const response = await fetch("/api/auth/csrf", { credentials: "include" });
   if (!response.ok)
     throw new FrontendApiError("Authentication required", response.status);
@@ -78,6 +82,43 @@ export async function apiFetch<T>(
   if (!response.ok) {
     const body =
       data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+    if (
+      response.status === 403 &&
+      body.error === "CSRF_REJECTED" &&
+      mutating &&
+      csrf
+    ) {
+      const freshToken = await csrfToken(true);
+      requestHeaders.set("x-csrf-token", freshToken);
+      const retryResponse = await fetch(path, {
+        credentials: "include",
+        ...init,
+        body: requestBody,
+        headers: requestHeaders,
+      });
+      const retryText = await retryResponse.text();
+      const retryData = retryText ? parseBody(retryText) : null;
+      if (retryResponse.ok) {
+        return (responseType === "text" ? retryText : retryData) as T;
+      }
+      const retryBody =
+        retryData && typeof retryData === "object"
+          ? (retryData as Record<string, unknown>)
+          : {};
+      throw new FrontendApiError(
+        String(
+          retryBody.message ||
+            retryBody.error ||
+            retryResponse.statusText ||
+            "Request failed",
+        ),
+        retryResponse.status,
+        typeof retryBody.requestId === "string"
+          ? retryBody.requestId
+          : undefined,
+        retryBody.details,
+      );
+    }
     throw new FrontendApiError(
       String(
         body.message || body.error || response.statusText || "Request failed",

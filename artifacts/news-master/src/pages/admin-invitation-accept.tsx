@@ -65,7 +65,7 @@ export default function AdminInvitationAccept() {
         }),
       }),
     onSuccess: () => {
-      window.history.replaceState({}, "", "/admin/login");
+      window.history.replaceState({}, "", "/login");
       form.reset();
       setAccepted(true);
     },
@@ -98,7 +98,7 @@ export default function AdminInvitationAccept() {
             <div className="space-y-5 text-center">
               <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
               <Button asChild className="w-full">
-                <Link href="/admin/login">Continue to secure login</Link>
+                <Link href="/login">Continue to secure login</Link>
               </Button>
             </div>
           ) : !token ? (
@@ -108,7 +108,7 @@ export default function AdminInvitationAccept() {
                 invitation email.
               </p>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/admin/login">Administrator login</Link>
+                <Link href="/login">Sign in</Link>
               </Button>
             </div>
           ) : (

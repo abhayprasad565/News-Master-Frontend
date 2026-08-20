@@ -236,6 +236,30 @@ export default function AdminPostDetail() {
       }),
   });
 
+  const restoreMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ success: boolean; message: string; post: any }>(
+        `/api/admin/posts/${targetPostId}/restore`,
+        { method: "POST" },
+      ),
+    onSuccess: () => {
+      toast({
+        title: "Story restored",
+        description: "Post is back in manual review.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetAdminPostQueryKey(id!),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetAdminPostsQueryKey() });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to restore post",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
   const publishMutation = usePublishPost({
     mutation: {
       onSuccess: () => {
@@ -326,6 +350,7 @@ export default function AdminPostDetail() {
   const canArchive = ["VALIDATED", "REVIEWED", "REJECTED"].includes(status);
   const canPublish = status === "VALIDATED" || status === "REVIEWED";
   const canCorrect = status === "PUBLISHED";
+  const canRestore = Boolean((detail as any).archivedAt) || status === "REJECTED";
 
   const handlePublish = () => {
     if (planData?.requiresSensitivityOverride && !sensitivityOverride) {
@@ -463,6 +488,23 @@ export default function AdminPostDetail() {
               className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0"
             >
               <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500 shrink-0" /> Correction
+            </Button>
+          )}
+
+          {canRestore && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => restoreMutation.mutate()}
+              disabled={restoreMutation.isPending}
+              className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0"
+            >
+              {restoreMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Restore
             </Button>
           )}
 
