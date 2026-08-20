@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetStory, useGetMe } from "@workspace/api-client-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import {
   Heart,
   Bookmark,
   MessageCircle,
+  Eye,
   Loader2,
   Trash2,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { setMetaTag, setCanonical, removeCanonical, setJsonLd, removeJsonLd } from "@/lib/seo";
 
 export default function StoryDetail() {
   const { id } = useParams();
@@ -48,6 +50,58 @@ export default function StoryDetail() {
     commentCount?: number;
   };
   const canUseEngagement = Boolean(me?.user);
+
+  // Inject per-story SEO meta tags for social sharing and crawlers
+  useEffect(() => {
+    if (!story) return;
+    const s = story as typeof story & { slug?: string | null; media?: Array<{ url: string; type: string }> };
+    const rawTitle = (s as any).title ?? "";
+    const rawText = (s as any).text ?? "";
+    const headline = rawTitle || rawText.slice(0, 70);
+    const desc = rawText.slice(0, 160);
+    const slug = s.slug ?? id;
+    const canonical = `https://scrollbrief.in/stories/${slug}`;
+    const imageUrl = s.media?.find((m) => m.type === "GRAPHIC")?.url ?? "https://scrollbrief.in/logo.png";
+    const publishedAt = (s as any).publishedAt ? new Date((s as any).publishedAt).toISOString() : undefined;
+
+    document.title = `${headline} — ScrollBrief`;
+    setCanonical(canonical);
+    setMetaTag("description", desc);
+    setMetaTag("og:title", headline);
+    setMetaTag("og:description", desc);
+    setMetaTag("og:url", canonical);
+    setMetaTag("og:image", imageUrl);
+    setMetaTag("og:type", "article");
+    if (publishedAt) setMetaTag("article:published_time", publishedAt);
+    setMetaTag("twitter:title", headline);
+    setMetaTag("twitter:description", desc);
+    setMetaTag("twitter:image", imageUrl);
+    setMetaTag("twitter:card", "summary_large_image");
+
+    setJsonLd("story", {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      headline,
+      description: desc,
+      url: canonical,
+      mainEntityOfPage: canonical,
+      ...(publishedAt ? { datePublished: publishedAt, dateModified: publishedAt } : {}),
+      image: [imageUrl],
+      publisher: {
+        "@type": "Organization",
+        name: "ScrollBrief",
+        logo: { "@type": "ImageObject", url: "https://scrollbrief.in/logo.png" },
+      },
+      author: { "@type": "Organization", name: "ScrollBrief" },
+    });
+
+    return () => {
+      document.title = "ScrollBrief — News, Briefly";
+      removeCanonical();
+      removeJsonLd("story");
+    };
+  }, [story, id]);
+
   const canModerateComments =
     me?.user?.role === "owner" || me?.user?.role === "admin";
   const action = useMutation({
@@ -249,10 +303,16 @@ export default function StoryDetail() {
           <Bookmark className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
           {engagement.savedByMe ? "Saved" : "Save"}
         </Button>
-        <span className="ml-auto inline-flex items-center text-xs sm:text-sm text-muted-foreground">
-          <MessageCircle className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          {engagement.commentCount ?? 0} comments
-        </span>
+        <div className="ml-auto inline-flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+          <span className="inline-flex items-center">
+            <Eye className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            {((story as any)?.viewCount ?? 0).toLocaleString()} views
+          </span>
+          <span className="inline-flex items-center">
+            <MessageCircle className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            {engagement.commentCount ?? 0} comments
+          </span>
+        </div>
       </div>
 
       {isCorrection && story.correctionOfPostId && (

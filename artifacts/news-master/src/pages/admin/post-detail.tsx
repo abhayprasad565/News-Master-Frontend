@@ -120,8 +120,15 @@ export default function AdminPostDetail() {
     data: detail,
     isLoading,
     error,
+    refetch,
   } = useGetAdminPost(id || "", {
-    query: { enabled: !!id } as any,
+    query: {
+      enabled: !!id,
+      refetchInterval: (query: any) => {
+        const renderState = query.state.data?.render?.state;
+        return renderState === "queued" || renderState === "rendering" ? 2500 : false;
+      },
+    } as any,
   });
 
   const targetPostId = detail?.id || id;
@@ -172,6 +179,63 @@ export default function AdminPostDetail() {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ success: boolean; message: string; post: any }>(
+        `/api/admin/posts/${targetPostId}/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify({ postId: targetPostId, timestamp: new Date().toISOString() }),
+        },
+      ),
+    onSuccess: () => {
+      toast({
+        title: "Story Approved & Validated",
+        description: "Status changed to REVIEWED. Media rendering queued in background.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetAdminPostQueryKey(id!),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetAdminPostsQueryKey() });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to approve post",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (reason?: string) =>
+      apiFetch<{ success: boolean; message: string; post: any }>(
+        `/api/admin/posts/${targetPostId}/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            postId: targetPostId,
+            reason: reason || "Rejected by editorial review",
+          }),
+        },
+      ),
+    onSuccess: () => {
+      toast({
+        title: "Story Rejected",
+        description: "Post marked as REJECTED and removed from review queue.",
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetAdminPostQueryKey(id!),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetAdminPostsQueryKey() });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to reject post",
+        description: err.message,
+        variant: "destructive",
+      }),
+  });
+
   const publishMutation = usePublishPost({
     mutation: {
       onSuccess: () => {
@@ -211,8 +275,11 @@ export default function AdminPostDetail() {
   const renderMutation = useMutation({
     mutationFn: () =>
       apiFetch<{ success: boolean; message: string }>(
-        `/api/admin/posts/${id}/render`,
-        { method: "POST" },
+        `/api/admin/posts/${targetPostId}/render`,
+        {
+          method: "POST",
+          body: JSON.stringify({ postId: targetPostId }),
+        },
       ),
     onSuccess: () => {
       toast({
@@ -248,15 +315,17 @@ export default function AdminPostDetail() {
     );
   }
 
+  const status = detail.status as string;
   const isMutable = [
     "DRAFT",
     "MANUAL_REVIEW",
     "REJECTED",
     "VALIDATED",
-  ].includes(detail.status);
-  const canArchive = detail.status !== "PUBLISHED";
-  const canPublish = true;
-  const canCorrect = detail.status === "PUBLISHED";
+    "REVIEWED",
+  ].includes(status);
+  const canArchive = ["VALIDATED", "REVIEWED", "REJECTED"].includes(status);
+  const canPublish = status === "VALIDATED" || status === "REVIEWED";
+  const canCorrect = status === "PUBLISHED";
 
   const handlePublish = () => {
     if (planData?.requiresSensitivityOverride && !sensitivityOverride) {
@@ -315,125 +384,112 @@ export default function AdminPostDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
-        <Link href="/admin/posts" className="flex items-center">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Posts
+      {/* Top Navigation & Action Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <Link
+          href="/admin/posts"
+          className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors self-start"
+        >
+          <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to Posts
         </Link>
-      </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          {(() => {
-            const isGenericOrUuid = (str?: string | null) =>
-              !str ||
-              !str.trim() ||
-              ["untitled", "untitled post", "unpublished post"].includes(
-                str.trim().toLowerCase(),
-              ) ||
-              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-                str.trim(),
-              );
+        {/* Action Button Bar: Uniform equal-width h-9 buttons */}
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
+          {/* Review Actions for MANUAL_REVIEW / DRAFT */}
+          {(detail.status === "MANUAL_REVIEW" || detail.status === "DRAFT") && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => approveMutation.mutate()}
+                disabled={approveMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm justify-center shrink-0"
+              >
+                {approveMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Approve
+              </Button>
 
-            let displayTitle = detail.title;
-            if (
-              isGenericOrUuid(displayTitle) &&
-              detail.text &&
-              detail.text.trim()
-            ) {
-              const cleanedText = (
-                detail.text.split(/source:\s*/i)[0] ?? detail.text
-              ).trim();
-              const firstSentence = (
-                cleanedText.split(/(?<=[.!?])\s+|\n+/)[0] ?? ""
-              ).trim();
-              const headline = firstSentence.replace(/^[#*\s]+/, "").trim();
-              if (headline) {
-                displayTitle =
-                  headline.length > 90
-                    ? `${headline.slice(0, 87)}...`
-                    : headline;
-              }
-            }
-
-            return (
-              <h1 className="text-3xl font-bold font-serif tracking-tight">
-                {displayTitle || `Post #${(detail as any).postNumber || detail.id.slice(0, 8)}`}
-              </h1>
-            );
-          })()}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Badge variant="default" className="font-mono font-bold">
-              #{(detail as any).postNumber || detail.id.slice(0, 8)}
-            </Badge>
-            <Badge variant="outline">{detail.status}</Badge>
-            <Badge variant="secondary">{detail.kind}</Badge>
-            {detail.labels.map((l) => (
-              <Badge key={l.id} variant="outline" className="text-xs">
-                {l.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {isMutable && (
-            <Button variant="outline" asChild>
-              <Link href={`/admin/posts/${detail.id}/edit`}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
-              </Link>
-            </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-destructive/40 text-destructive hover:bg-destructive/10 font-medium h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm justify-center shrink-0"
+                    disabled={rejectMutation.isPending}
+                  >
+                    <XCircle className="mr-1.5 h-3.5 w-3.5" /> Reject
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reject this story?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will mark the story as REJECTED and remove it from the active review queue.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => rejectMutation.mutate(undefined)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Reject
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
-
-          <Button
-            variant="outline"
-            onClick={() => renderMutation.mutate()}
-            disabled={renderMutation.isPending}
-            className="hover:border-primary"
-          >
-            {renderMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4 text-primary" />
-            )}
-            Render Media
-          </Button>
-
-          <Button variant="outline" asChild>
-            <Link href={`/admin/posts/${detail.id}/video`}>
-              <Film className="mr-2 h-4 w-4" /> Create Video
-            </Link>
-          </Button>
 
           {canPublish && (
             <Button
+              size="sm"
               onClick={() => setPublishOpen(true)}
               disabled={publishMutation.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm justify-center shrink-0"
             >
-              <Send className="mr-2 h-4 w-4" /> Publish
+              <Send className="mr-1.5 h-3.5 w-3.5" /> Publish
             </Button>
           )}
 
           {canCorrect && (
-            <Button variant="outline" onClick={() => setCorrectionOpen(true)}>
-              <AlertTriangle className="mr-2 h-4 w-4" /> Correction
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCorrectionOpen(true)}
+              className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0"
+            >
+              <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500 shrink-0" /> Correction
+            </Button>
+          )}
+
+          {isMutable && (
+            <Button size="sm" variant="outline" asChild className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0">
+              <Link href={`/admin/posts/${detail.id}/edit`}>
+                <Edit className="mr-1.5 h-3.5 w-3.5" /> Edit
+              </Link>
             </Button>
           )}
 
           {canArchive && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash2 className="mr-2 h-4 w-4" /> Archive
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10 font-medium h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm justify-center shrink-0"
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Archive this post?</AlertDialogTitle>
+                  <AlertDialogTitle>Delete this post?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will archive "
-                    {detail.title || detail.text.slice(0, 80)}". Published posts
-                    cannot be archived.
+                    This will delete "{detail.title || detail.text.slice(0, 80)}". Published posts cannot be deleted.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -442,7 +498,7 @@ export default function AdminPostDetail() {
                     onClick={() => deleteMutation.mutate({ postId: detail.id })}
                     className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   >
-                    Archive
+                    Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -451,12 +507,110 @@ export default function AdminPostDetail() {
         </div>
       </div>
 
-      {detail.status === "REJECTED" && detail.validationReason && (
+      {/* Story Headline & Badges Header */}
+      <div className="space-y-2">
+        {(() => {
+          const isGenericOrUuid = (str?: string | null) =>
+            !str ||
+            !str.trim() ||
+            ["untitled", "untitled post", "unpublished post"].includes(
+              str.trim().toLowerCase(),
+            ) ||
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              str.trim(),
+            );
+
+          let displayTitle = detail.title;
+          if (
+            isGenericOrUuid(displayTitle) &&
+            detail.text &&
+            detail.text.trim()
+          ) {
+            const cleanedText = (
+              detail.text.split(/source:\s*/i)[0] ?? detail.text
+            ).trim();
+            const firstSentence = (
+              cleanedText.split(/(?<=[.!?])\s+|\n+/)[0] ?? ""
+            ).trim();
+            const headline = firstSentence.replace(/^[#*\s]+/, "").trim();
+            if (headline) {
+              displayTitle =
+                headline.length > 90
+                  ? `${headline.slice(0, 87)}...`
+                  : headline;
+            }
+          }
+
+          return (
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight leading-snug">
+              {displayTitle || `Post #${(detail as any).postNumber || detail.id.slice(0, 8)}`}
+            </h1>
+          );
+        })()}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="default" className="font-mono font-bold">
+            #{(detail as any).postNumber || detail.id.slice(0, 8)}
+          </Badge>
+          <Badge
+            variant={
+              status === "PUBLISHED"
+                ? "default"
+                : status === "REVIEWED"
+                  ? "secondary"
+                  : status === "MANUAL_REVIEW"
+                    ? "outline"
+                    : status === "REJECTED"
+                      ? "destructive"
+                      : "outline"
+            }
+            className={
+              status === "MANUAL_REVIEW"
+                ? "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 font-semibold"
+                : status === "REVIEWED"
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold"
+                  : ""
+            }
+          >
+            {status}
+          </Badge>
+          <Badge variant="secondary">{detail.kind}</Badge>
+
+          {((detail as any).render?.state === "rendering" || renderMutation.isPending) && (
+            <Badge className="bg-amber-500 text-white animate-pulse">
+              <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Rendering...
+            </Badge>
+          )}
+          {(detail as any).render?.state === "queued" && !renderMutation.isPending && (
+            <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50/50 dark:bg-amber-950/30">
+              <Clock className="mr-1 h-3 w-3 animate-spin" /> Render Queued
+            </Badge>
+          )}
+          {(detail as any).render?.state === "failed" && (
+            <Badge variant="destructive">
+              <AlertCircle className="mr-1 h-3 w-3" /> Render Failed
+            </Badge>
+          )}
+          {(detail as any).render?.state === "ready" && (
+            <Badge className="bg-emerald-600 text-white">
+              <CheckCircle2 className="mr-1 h-3 w-3" /> Render Ready
+            </Badge>
+          )}
+
+          {detail.labels.map((l) => (
+            <Badge key={l.id} variant="outline" className="text-xs">
+              {l.name}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {detail.status === "REJECTED" && (
         <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-md flex items-start">
           <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-sm">Validation Rejected</h4>
-            <p className="text-sm mt-1">{detail.validationReason}</p>
+            <h4 className="font-semibold text-sm">Story Rejected</h4>
+            <p className="text-sm mt-1">{detail.validationReason || "This story was rejected by editorial review."}</p>
           </div>
         </div>
       )}
@@ -493,21 +647,66 @@ export default function AdminPostDetail() {
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-primary" /> Media Assets & Rendering
                 </h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => renderMutation.mutate()}
-                  disabled={renderMutation.isPending}
-                  className="h-8 text-xs"
-                >
-                  {renderMutation.isPending ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" asChild className="h-8 text-xs">
+                    <Link href={`/admin/posts/${detail.id}/video`}>
+                      <Film className="mr-1.5 h-3.5 w-3.5" /> Video Studio
+                    </Link>
+                  </Button>
+                  {(detail as any).media?.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => renderMutation.mutate()}
+                      disabled={renderMutation.isPending || (detail as any).render?.state === "rendering"}
+                      className="h-8 text-xs"
+                    >
+                      {renderMutation.isPending || (detail as any).render?.state === "rendering" ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Re-render
+                    </Button>
                   )}
-                  {(detail as any).media?.length > 0 ? "Re-render" : "Render Media"}
-                </Button>
+                </div>
               </div>
+
+              {(detail as any).render?.state === "failed" && (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Rendering Failed</p>
+                    <p className="font-mono mt-0.5 text-[11px] break-all">
+                      {(detail as any).render?.job?.lastFailureReason || "Unknown failure occurred during asset rendering."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {(detail as any).render?.state === "queued" && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                  <Clock className="h-4 w-4 shrink-0 mt-0.5 animate-spin" />
+                  <div>
+                    <p className="font-semibold">Render Job Queued in Background</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      Rendering 4:5 graphic card and 9:16 video Reel. This page will automatically update when ready.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {(detail as any).render?.state === "rendering" && (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                  <Loader2 className="h-4 w-4 shrink-0 mt-0.5 animate-spin text-amber-600" />
+                  <div>
+                    <p className="font-semibold">Rendering in Progress...</p>
+                    <p className="mt-0.5 text-muted-foreground">
+                      Generating high-resolution graphic card and video Reel. Updating automatically...
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {(detail as any).media && (detail as any).media.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -559,10 +758,10 @@ export default function AdminPostDetail() {
                   <Button
                     size="sm"
                     onClick={() => renderMutation.mutate()}
-                    disabled={renderMutation.isPending}
+                    disabled={renderMutation.isPending || (detail as any).render?.state === "rendering"}
                     className="bg-primary text-primary-foreground"
                   >
-                    {renderMutation.isPending ? (
+                    {renderMutation.isPending || (detail as any).render?.state === "rendering" ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <Sparkles className="mr-2 h-4 w-4" />

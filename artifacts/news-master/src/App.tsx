@@ -44,6 +44,8 @@ import AdminUrgent from "@/pages/admin/urgent";
 import AdminAutopilot from "@/pages/admin/autopilot";
 import AdminAudioLibrary from "@/pages/admin/audio-library";
 import AdminPostVideo from "@/pages/admin/post-video";
+import AdminTraffic from "@/pages/admin/traffic";
+import { usePageTracking } from "@/hooks/use-page-tracking";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,12 +60,18 @@ function RootRedirect() {
   return <Redirect to="/stories" />;
 }
 
+function PageTracker() {
+  usePageTracking();
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <PageTracker />
             <Switch>
               <Route path="/marriage-invitation" component={MarriageInvitation} />
               <Route path="/login" component={Login} />
@@ -269,6 +277,13 @@ function App() {
                 <ProtectedRoute requireRole="admin">
                   <AdminLayout>
                     <AdminSettings />
+                  </AdminLayout>
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/traffic">
+                <ProtectedRoute requireRole="admin">
+                  <AdminLayout>
+                    <AdminTraffic />
                   </AdminLayout>
                 </ProtectedRoute>
               </Route>

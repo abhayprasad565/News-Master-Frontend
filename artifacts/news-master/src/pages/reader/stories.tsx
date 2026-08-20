@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useGetStories, useGetPublicLabels, Story } from '@workspace/api-client-react';
 import { Link, useParams } from 'wouter';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { Search, Filter, Loader2, Calendar as CalendarIcon, LayoutGrid, ExternalLink, X, Film, Image as ImageIcon } from 'lucide-react';
+import { Search, Filter, Loader2, Calendar as CalendarIcon, LayoutGrid, ExternalLink, X, Film, Image as ImageIcon, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -230,7 +230,8 @@ function StoryCard({ story }: { story: Story }) {
   const publishedAt = story.publishedAt ? new Date(story.publishedAt) : null;
   const isCorrection = story.kind === 'CORRECTION';
   const postNum = (story as any).postNumber;
-  const storyTarget = postNum ? String(postNum) : story.id;
+  const storySlug = (story as any).slug;
+  const storyTarget = storySlug || (postNum ? String(postNum) : story.id);
 
   const isGenericOrUuid = (str?: string | null) =>
     !str ||
@@ -303,9 +304,16 @@ function StoryCard({ story }: { story: Story }) {
                 </Badge>
               ))}
               {publishedAt && (
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
-                  <CalendarIcon className="h-3 w-3" />
-                  {format(publishedAt, 'MMM d, yyyy • h:mm a')}
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground ml-auto">
+                  <span className="inline-flex items-center gap-1 font-mono">
+                    <Eye className="h-3 w-3" />
+                    {((story as any).viewCount ?? 0).toLocaleString()}
+                  </span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    {format(publishedAt, 'MMM d, yyyy')}
+                  </span>
                 </div>
               )}
             </div>

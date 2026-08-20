@@ -99,8 +99,9 @@ export default function AdminPostList() {
   const getStatusBadge = (s: string) => {
     switch(s) {
       case 'PUBLISHED': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Published</Badge>;
+      case 'REVIEWED': return <Badge variant="outline" className="border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30"><CheckCircle2 className="w-3 h-3 mr-1"/> Reviewed</Badge>;
       case 'DRAFT': return <Badge variant="secondary"><Edit className="w-3 h-3 mr-1"/> Draft</Badge>;
-      case 'MANUAL_REVIEW': return <Badge variant="outline" className="border-amber-500 text-amber-600"><Clock className="w-3 h-3 mr-1"/> Review</Badge>;
+      case 'MANUAL_REVIEW': return <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30"><Clock className="w-3 h-3 mr-1"/> Review</Badge>;
       case 'REJECTED': return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1"/> Rejected</Badge>;
       case 'VALIDATED': return <Badge variant="outline" className="border-blue-500 text-blue-600"><CheckSquare className="w-3 h-3 mr-1"/> Validated</Badge>;
       case 'VALIDATING': return <Badge variant="outline" className="border-purple-500 text-purple-600">Validating...</Badge>;

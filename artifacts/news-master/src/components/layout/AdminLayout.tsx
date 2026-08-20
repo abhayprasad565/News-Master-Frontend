@@ -18,6 +18,7 @@ import {
   Bot,
   Music2,
   Menu,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -32,6 +33,7 @@ import {
 
 const adminNav = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Traffic", href: "/admin/traffic", icon: TrendingUp },
   { name: "Ranking", href: "/admin/ranking", icon: BarChart3 },
   { name: "Autopilot", href: "/admin/autopilot", icon: Bot },
   { name: "Audio", href: "/admin/audio", icon: Music2 },

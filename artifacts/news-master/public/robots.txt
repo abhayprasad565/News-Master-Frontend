@@ -1,2 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /media/audio/
+Disallow: /media/source/
+Disallow: /media/tmp/
+
+Sitemap: https://scrollbrief.in/sitemap.xml
+Sitemap: https://scrollbrief.in/sitemap-news.xml
+Sitemap: https://scrollbrief.in/sitemap-index.xml

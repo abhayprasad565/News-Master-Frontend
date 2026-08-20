@@ -50,8 +50,14 @@ export async function apiFetch<T>(
   const method = (init.method ?? "GET").toUpperCase();
   const mutating = !["GET", "HEAD", "OPTIONS"].includes(method);
   const requestHeaders = new Headers(headers);
-  if (init.body && !hasFormDataBody && !requestHeaders.has("content-type")) {
-    requestHeaders.set("content-type", "application/json");
+  let requestBody = init.body;
+  if (mutating && !hasFormDataBody) {
+    if (requestBody === undefined || requestBody === null) {
+      requestBody = "{}";
+    }
+    if (!requestHeaders.has("content-type")) {
+      requestHeaders.set("content-type", "application/json");
+    }
   }
   if (mutating && csrf) {
     requestHeaders.set(
@@ -62,6 +68,7 @@ export async function apiFetch<T>(
   const response = await fetch(path, {
     credentials: "include",
     ...init,
+    body: requestBody,
     headers: requestHeaders,
   });
 
