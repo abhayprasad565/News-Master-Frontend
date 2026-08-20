@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,6 +23,7 @@ import { apiFetch, setCsrfToken } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { RecoveryCodes } from "@/components/auth/RecoveryCodes";
+import { destinationForRole, type WebRole } from "@/lib/role-policy";
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -34,11 +35,10 @@ type User = {
   id: string;
   username: string;
   email: string | null;
-  role: "owner" | "admin" | "moderator" | "reader";
+  role: WebRole;
 };
 
 export default function Login() {
-  const administratorLogin = window.location.pathname.startsWith("/admin/");
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -55,28 +55,37 @@ export default function Login() {
     defaultValues: { identifier: "", password: "" },
   });
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("oauth") !== "failed") return;
+    url.searchParams.delete("oauth");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    toast({
+      title: "Google sign-in failed",
+      description: "Authentication could not be completed. Please try again.",
+      variant: "destructive",
+    });
+  }, [toast]);
+
   const loginMutation = useMutation({
     mutationFn: (values: LoginFormValues) =>
-      administratorLogin
-        ? apiFetch<{ csrfToken: string }>("/api/admin/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ ...values, turnstileToken }),
-            csrf: false,
-          })
-        : apiFetch<{ user: User; csrfToken: string }>("/api/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ ...values, turnstileToken }),
-            csrf: false,
-          }),
+      apiFetch<
+        | { user: User; csrfToken: string; destination: string }
+        | { requiresOtp: true; csrfToken: string; challengeExpiresAt: string }
+      >("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ ...values, turnstileToken }),
+        csrf: false,
+      }),
     onSuccess: (data) => {
-      if (administratorLogin && !("user" in data)) {
+      if ("requiresOtp" in data && data.requiresOtp) {
         resetTurnstile();
         setChallengeCsrf(data.csrfToken);
         form.reset({ identifier: "", password: "" });
         return;
       }
       if ("user" in data)
-        finishLogin((data as { user: User }).user, data.csrfToken);
+        finishLogin(data.user, data.csrfToken, data.destination);
     },
     onError: (error) => {
       resetTurnstile();
@@ -90,7 +99,8 @@ export default function Login() {
         user?: User;
         csrfToken: string;
         recoveryCodes?: string[];
-      }>(showRecovery ? "/api/admin/auth/recovery" : "/api/admin/auth/otp", {
+        destination: string;
+      }>(showRecovery ? "/api/auth/recovery" : "/api/auth/otp", {
         method: "POST",
         body: JSON.stringify({ code: otp }),
         csrf: challengeCsrf || false,
@@ -101,14 +111,14 @@ export default function Login() {
         setRecoveryCodes(data.recoveryCodes);
         return;
       }
-      navigateAfterLogin(data.user);
+      navigateAfterLogin(data.user, data.destination);
     },
     onError: (error) => showError(error, showRecovery ? "Recovery failed" : "Wrong OTP"),
   });
 
   const resendMutation = useMutation({
     mutationFn: () =>
-      apiFetch<{ message: string }>("/api/admin/auth/otp/resend", {
+      apiFetch<{ message: string }>("/api/auth/otp/resend", {
         method: "POST",
         csrf: challengeCsrf || false,
       }),
@@ -119,9 +129,13 @@ export default function Login() {
     onError: showError,
   });
 
-  function finishLogin(user: User | undefined, csrfToken: string) {
+  function finishLogin(
+    user: User | undefined,
+    csrfToken: string,
+    destination?: string,
+  ) {
     establishSession(user, csrfToken);
-    navigateAfterLogin(user);
+    navigateAfterLogin(user, destination);
   }
 
   function establishSession(user: User | undefined, csrfToken: string) {
@@ -131,8 +145,9 @@ export default function Login() {
     toast({ title: "Welcome back" });
   }
 
-  function navigateAfterLogin(user: User | undefined) {
-    setLocation(user?.role === "reader" ? "/stories" : "/admin");
+  function navigateAfterLogin(user: User | undefined, destination?: string) {
+    const expected = user ? destinationForRole(user.role) : "/stories";
+    setLocation(destination === expected ? destination : expected);
   }
 
   function resetTurnstile() {
@@ -175,7 +190,7 @@ export default function Login() {
   if (me?.user)
     return (
       <Redirect
-        to={(me.user as any).role === "reader" ? "/stories" : "/admin"}
+        to={destinationForRole((me.user as User).role)}
       />
     );
 
@@ -187,7 +202,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">
-            {administratorLogin ? "Administrator login" : "Reader login"}
+            Sign in
           </CardTitle>
           <CardDescription>
             {challengeCsrf
@@ -289,7 +304,7 @@ export default function Login() {
                   )}
                 />
                 <TurnstileWidget
-                  action={administratorLogin ? "admin_login" : "reader_login"}
+                  action="login"
                   onToken={setTurnstileToken}
                   resetKey={turnstileResetKey}
                 />
@@ -303,8 +318,7 @@ export default function Login() {
                   )}
                   Continue
                 </Button>
-                {!administratorLogin && (
-                  <>
+                <>
                     <div className="relative my-2">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-border" />
@@ -321,7 +335,7 @@ export default function Login() {
                       className="w-full font-medium tracking-tight text-sm gap-2.5 h-10 border-border/80 hover:bg-accent/60 transition-all shadow-sm"
                       onClick={() =>
                         apiFetch<{ authorizationUrl: string }>(
-                          "/api/auth/google/start",
+                          "/api/auth/google/start?mode=reader",
                         )
                           .then((data) => {
                             window.location.assign(data.authorizationUrl);
@@ -354,28 +368,20 @@ export default function Login() {
                       <span>Sign in with Google</span>
                     </Button>
                   </>
-                )}
-                {!administratorLogin && (
-                  <p className="text-center text-sm text-muted-foreground">
-                    <Link
-                      href="/forgot-password"
-                      className="text-primary hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </p>
-                )}
-                {!administratorLogin && (
-                  <p className="text-center text-sm text-muted-foreground">
-                    Need an account?{" "}
-                    <Link
-                      href="/register"
-                      className="text-primary hover:underline"
-                    >
-                      Register
-                    </Link>
-                  </p>
-                )}
+                <p className="text-center text-sm text-muted-foreground">
+                  <Link
+                    href="/forgot-password"
+                    className="text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </p>
+                <p className="text-center text-sm text-muted-foreground">
+                  Need an account?{" "}
+                  <Link href="/register" className="text-primary hover:underline">
+                    Register
+                  </Link>
+                </p>
               </form>
             </Form>
           )}

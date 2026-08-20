@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { useGetMe, UserSessionRole } from "@workspace/api-client-react";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { Loader2 } from "lucide-react";
+import { canAccessAdmin, destinationForRole, type WebRole } from "@/lib/role-policy";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,7 +11,6 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   const { data, isLoading, error } = useGetMe();
-  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -21,20 +21,17 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   }
 
   if (error || !data?.user) {
-    return (
-      <Redirect
-        to={location.startsWith("/admin") ? "/admin/login" : "/login"}
-      />
-    );
+    return <Redirect to="/login" />;
   }
 
-  const actualRole = (data.user as any).role as string;
+  const actualRole = (data.user as any).role as WebRole;
   const hasRequiredRole =
     !requireRole ||
-    data.user.role === requireRole ||
-    (requireRole === "admin" && actualRole === "owner");
+    (requireRole === "admin"
+      ? canAccessAdmin(actualRole)
+      : data.user.role === requireRole);
   if (!hasRequiredRole) {
-    return <Redirect to={actualRole === "reader" ? "/stories" : "/admin"} />;
+    return <Redirect to={destinationForRole(actualRole)} />;
   }
 
   return <>{children}</>;

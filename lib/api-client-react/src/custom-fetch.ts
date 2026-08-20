@@ -12,10 +12,13 @@ const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 const CSRF_STORAGE_KEY = "scrollbrief.csrf";
 
-async function browserCsrfToken(): Promise<string | null> {
+async function browserCsrfToken(forceFresh = false): Promise<string | null> {
   if (typeof sessionStorage === "undefined") return null;
-  const cached = sessionStorage.getItem(CSRF_STORAGE_KEY);
-  if (cached) return cached;
+  if (!forceFresh) {
+    const cached = sessionStorage.getItem(CSRF_STORAGE_KEY);
+    if (cached) return cached;
+  }
+  sessionStorage.removeItem(CSRF_STORAGE_KEY);
   const response = await fetch("/api/auth/csrf", { credentials: "include" });
   if (!response.ok) return null;
   const data = (await response.json()) as { csrfToken?: unknown };
@@ -402,6 +405,33 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
+    const isCsrfError =
+      response.status === 403 &&
+      typeof errorData === "object" &&
+      errorData !== null &&
+      (errorData as Record<string, unknown>).error === "CSRF_REJECTED";
+
+    if (isCsrfError && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+      const freshToken = await browserCsrfToken(true);
+      if (freshToken) {
+        headers.set("x-csrf-token", freshToken);
+        const retryResponse = await fetch(input, {
+          credentials: "include",
+          ...init,
+          method,
+          headers,
+        });
+        if (retryResponse.ok) {
+          return (await parseSuccessBody(
+            retryResponse,
+            responseType,
+            requestInfo,
+          )) as T;
+        }
+        const retryErrorData = await parseErrorBody(retryResponse, method);
+        throw new ApiError(retryResponse, retryErrorData, requestInfo);
+      }
+    }
     throw new ApiError(response, errorData, requestInfo);
   }
 

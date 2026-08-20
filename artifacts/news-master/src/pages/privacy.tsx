@@ -81,9 +81,9 @@ export default function PrivacyPolicy() {
               When users participate in community features, we process submitted content together with timestamps, moderation status, abuse-prevention signals, and reports to enforce community standards and maintain platform safety.
             </p>
 
-            <h3 className="text-lg font-semibold text-foreground pt-3">2.5 Information Collected Automatically</h3>
+            <h3 className="text-lg font-semibold text-foreground pt-3">2.5 Audience Analytics and Automated Data</h3>
             <p className="text-muted-foreground">
-              When you access ScrollBrief, technical information may be collected automatically by our servers, including IP address, browser type and version, operating system, referring pages, approximate location derived from IP, session tokens, and security rate-limiting logs.
+              To measure aggregate readership and story reads without cross-site tracking, ScrollBrief uses privacy-preserving, pseudonymous analytics. Client IP addresses are converted into daily-rotating HMAC hashes and are <strong>not stored in plain text</strong> in our analytics databases. We record coarse country codes (e.g. IN, US from Cloudflare), sanitized referrer domains (with sensitive query tokens stripped), and generalized device categories (mobile, tablet, desktop).
             </p>
           </div>
         </section>
@@ -157,7 +157,7 @@ export default function PrivacyPolicy() {
             9. Data Retention & Security
           </h2>
           <p className="text-muted-foreground">
-            We retain personal information only for as long as necessary to provide services and fulfill legal requirements. We employ industry-standard organizational and technical safeguards, including HTTPS encryption, scrypt password hashing, session tokens, rate limiting, and database access controls.
+            Detailed raw site visit logs and daily post-view deduplication records are automatically pruned and deleted after <strong>90 days</strong>. Aggregated statistical totals (e.g. lifetime story view counters and monthly readership trends) are retained long-term without pseudonymous visitor identifiers. We employ industry-standard organizational and technical safeguards, including HTTPS encryption, scrypt password hashing, session tokens, rate limiting, and database access controls.
           </p>
         </section>
 
