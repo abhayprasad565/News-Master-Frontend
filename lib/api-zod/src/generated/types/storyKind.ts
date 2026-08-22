@@ -6,11 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type StoryKind = typeof StoryKind[keyof typeof StoryKind];
-
+export type StoryKind = (typeof StoryKind)[keyof typeof StoryKind];
 
 export const StoryKind = {
-  ORIGINAL: 'ORIGINAL',
-  CORRECTION: 'CORRECTION',
-  CUSTOM: 'CUSTOM',
+  ORIGINAL: "ORIGINAL",
+  CORRECTION: "CORRECTION",
+  CUSTOM: "CUSTOM",
 } as const;

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type TopicOverrideInputMode = typeof TopicOverrideInputMode[keyof typeof TopicOverrideInputMode];
-
+export type TopicOverrideInputMode =
+  (typeof TopicOverrideInputMode)[keyof typeof TopicOverrideInputMode];
 
 export const TopicOverrideInputMode = {
-  BOOST: 'BOOST',
-  PIN: 'PIN',
-  SUPPRESS: 'SUPPRESS',
+  BOOST: "BOOST",
+  PIN: "PIN",
+  SUPPRESS: "SUPPRESS",
 } as const;

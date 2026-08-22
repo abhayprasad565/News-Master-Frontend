@@ -5,11 +5,13 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { DestinationFormat } from './destinationFormat';
-import type { DestinationPlatform } from './destinationPlatform';
+import type { DestinationFormat } from "./destinationFormat";
+import type { DestinationOptions } from "./destinationOptions";
+import type { DestinationPlatform } from "./destinationPlatform";
 
 export interface Destination {
   platform: DestinationPlatform;
   destination: string;
   format?: DestinationFormat;
+  options?: DestinationOptions;
 }

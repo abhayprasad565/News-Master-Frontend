@@ -7,16 +7,16 @@
  */
 
 export type GetPlatformPostsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
 };

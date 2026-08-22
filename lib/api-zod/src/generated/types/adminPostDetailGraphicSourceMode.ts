@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdminPostDetailGraphicSourceMode = typeof AdminPostDetailGraphicSourceMode[keyof typeof AdminPostDetailGraphicSourceMode];
-
+export type AdminPostDetailGraphicSourceMode =
+  (typeof AdminPostDetailGraphicSourceMode)[keyof typeof AdminPostDetailGraphicSourceMode];
 
 export const AdminPostDetailGraphicSourceMode = {
-  AUTO: 'AUTO',
-  NO_SOURCE_IMAGE: 'NO_SOURCE_IMAGE',
+  AUTO: "AUTO",
+  NO_SOURCE_IMAGE: "NO_SOURCE_IMAGE",
 } as const;

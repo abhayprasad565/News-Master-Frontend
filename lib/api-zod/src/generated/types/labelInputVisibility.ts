@@ -9,10 +9,10 @@
 /**
  * @nullable
  */
-export type LabelInputVisibility = typeof LabelInputVisibility[keyof typeof LabelInputVisibility] | null;
-
+export type LabelInputVisibility =
+  (typeof LabelInputVisibility)[keyof typeof LabelInputVisibility] | null;
 
 export const LabelInputVisibility = {
-  PUBLIC: 'PUBLIC',
-  ADMIN_ONLY: 'ADMIN_ONLY',
+  PUBLIC: "PUBLIC",
+  ADMIN_ONLY: "ADMIN_ONLY",
 } as const;

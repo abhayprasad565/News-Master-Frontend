@@ -19,6 +19,7 @@ import {
   Music2,
   Menu,
   TrendingUp,
+  Plug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -46,6 +47,7 @@ const adminNav = [
   { name: "Deliveries", href: "/admin/deliveries", icon: Send },
   { name: "Instagram", href: "/admin/platforms/instagram", icon: Instagram },
   { name: "X", href: "/admin/platforms/x", icon: Twitter },
+  { name: "Integrations", href: "/admin/integrations", icon: Plug },
   { name: "Labels", href: "/admin/labels", icon: Tags },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
@@ -117,7 +119,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-1.5">
-            <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="h-8 px-2 text-xs"
+            >
               <Link href="/stories" aria-label="Stories">
                 <Newspaper className="h-4 w-4" />
               </Link>
@@ -148,7 +155,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             Admin Portal
           </h1>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" asChild className="h-8 gap-1.5 text-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-8 gap-1.5 text-xs"
+            >
               <Link href="/stories">
                 <Newspaper className="h-3.5 w-3.5" />
                 <span>View Stories</span>

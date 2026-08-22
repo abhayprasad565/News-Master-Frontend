@@ -34,8 +34,73 @@ tags:
     description: Platform post records
   - name: metrics
     description: Metrics
+  - name: integrations
+    description: Administrator platform connections
 
 paths:
+  /admin/integrations/youtube/connect:
+    post:
+      operationId: connectYouTube
+      tags: [integrations]
+      responses:
+        "200":
+          description: Authorization URL created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authorizationUrl]
+                properties:
+                  authorizationUrl: { type: string }
+
+  /admin/integrations/youtube/callback:
+    get:
+      operationId: completeYouTubeConnection
+      tags: [integrations]
+      parameters:
+        - { in: query, name: code, required: true, schema: { type: string } }
+        - { in: query, name: state, required: true, schema: { type: string } }
+      responses:
+        "200": { description: YouTube connection verified }
+
+  /admin/integrations/youtube/status:
+    get:
+      operationId: getYouTubeIntegrationStatus
+      tags: [integrations]
+      responses:
+        "200":
+          description: Safe YouTube connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  [enabled, configured, publicUploadsApproved, connection]
+                properties:
+                  enabled: { type: boolean }
+                  configured: { type: boolean }
+                  publicUploadsApproved: { type: boolean }
+                  connection:
+                    anyOf:
+                      - type: "null"
+                      - type: object
+                        required:
+                          [id, channelId, channelName, status, connectedAt]
+                        properties:
+                          id: { type: string }
+                          channelId: { type: string }
+                          channelName: { type: string }
+                          status: { type: string, enum: [ACTIVE] }
+                          connectedAt: { type: string }
+
+  /admin/integrations/youtube:
+    delete:
+      operationId: disconnectYouTube
+      tags: [integrations]
+      responses:
+        "200":
+          { description: Local publication disabled and revocation attempted }
+
   /healthz:
     get:
       operationId: healthCheck
@@ -447,6 +512,129 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+
+  /admin/posts/{postId}/studio:
+    get:
+      operationId: getPostStudio
+      tags: [adminPosts]
+      summary: Get the unified Story and Reel workspace
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Studio workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PostStudio" }
+
+  /admin/posts/{postId}/reel-config:
+    patch:
+      operationId: updatePostReelConfig
+      tags: [adminPosts]
+      summary: Replace the canonical Reel configuration
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReelConfigUpdate" }
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelConfig" }
+
+  /admin/posts/{postId}/reel-config/refresh-auto-audio:
+    post:
+      operationId: refreshPostAutoAudio
+      tags: [adminPosts]
+      summary: Persist another automatic audio suggestion
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshAutoAudioInput" }
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelConfig" }
+
+  /admin/posts/{postId}/renders:
+    get:
+      operationId: listPostRenders
+      tags: [adminPosts]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Render history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/ReelRender" },
+                    }
+    post:
+      operationId: createPostRender
+      tags: [adminPosts]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RenderCreateInput" }
+      responses:
+        "202":
+          description: Queued render
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelRender" }
+
+  /admin/posts/{postId}/renders/{renderId}:
+    get:
+      operationId: getPostRender
+      tags: [adminPosts]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+        - { name: renderId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Render status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelRender" }
+
+  /admin/posts/{postId}/renders/{renderId}/finalize:
+    post:
+      operationId: finalizePostRender
+      tags: [adminPosts]
+      summary: Production-render the current preview as the canonical Reel
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+        - { name: renderId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinalizeRenderInput" }
+      responses:
+        "202":
+          description: Final render queued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReelRender" }
 
   /admin/posts/{postId}/corrections:
     post:
@@ -1470,12 +1658,21 @@ components:
       properties:
         platform:
           type: string
-          enum: [telegram, instagram, x, webhook, whatsapp]
+          enum: [telegram, instagram, youtube, x, webhook, whatsapp]
         destination:
           type: string
         format:
           type: string
           enum: [IMAGE, REEL]
+        options:
+          type: object
+          required: [title, description, privacyStatus]
+          properties:
+            title: { type: string, maxLength: 100 }
+            description: { type: string, maxLength: 5000 }
+            privacyStatus:
+              type: string
+              enum: [private, unlisted, public]
 
     PublishInput:
       type: object
@@ -1485,6 +1682,130 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Destination"
+
+    ReelConfig:
+      type: object
+      required:
+        [postId, version, visual, audio, rendering, disclosure, updatedAt]
+      properties:
+        postId: { type: string }
+        version: { type: number }
+        visual:
+          type: object
+          required: [mode, assetId]
+          properties:
+            mode: { type: string, enum: [ORIGINAL, CUSTOM, GENERATED, NONE] }
+            assetId: { type: [string, "null"] }
+        audio:
+          type: object
+          required:
+            [
+              mode,
+              trackId,
+              autoFilters,
+              startSeconds,
+              volume,
+              fadeInSeconds,
+              fadeOutSeconds,
+            ]
+          properties:
+            mode: { type: string, enum: [AUTO, TRACK, UPLOAD, NONE] }
+            trackId: { type: [string, "null"] }
+            autoFilters:
+              type: object
+              required: [tags]
+              properties:
+                theme: { type: string }
+                energy: { type: string, enum: [CALM, NEUTRAL, UPBEAT] }
+                tags: { type: array, items: { type: string } }
+            startSeconds: { type: number }
+            volume: { type: number }
+            fadeInSeconds: { type: number }
+            fadeOutSeconds: { type: number }
+        rendering:
+          type: object
+          required: [durationSeconds, template]
+          properties:
+            durationSeconds: { type: number, minimum: 3, maximum: 90 }
+            template: { type: string, enum: [scrollbrief-card-v1] }
+        disclosure:
+          type: object
+          required: [containsSyntheticMedia]
+          properties:
+            containsSyntheticMedia: { type: [boolean, "null"] }
+        updatedAt: { type: string, format: date-time }
+        updatedBy: { type: [string, "null"] }
+
+    ReelConfigUpdate:
+      type: object
+      required: [expectedVersion, visual, audio, rendering, disclosure]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+        visual: { $ref: "#/components/schemas/ReelConfig/properties/visual" }
+        audio: { $ref: "#/components/schemas/ReelConfig/properties/audio" }
+        rendering:
+          { $ref: "#/components/schemas/ReelConfig/properties/rendering" }
+        disclosure:
+          { $ref: "#/components/schemas/ReelConfig/properties/disclosure" }
+
+    ReelRender:
+      type: object
+      required: [id, postId, type, status, configVersion, configHash, createdAt]
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        type: { type: string, enum: [PREVIEW, FINAL] }
+        status: { type: string, enum: [QUEUED, RENDERING, COMPLETED, FAILED] }
+        configVersion: { type: number }
+        configHash: { type: string }
+        outputAssetId: { type: [string, "null"] }
+        outputUrl: { type: [string, "null"] }
+        errorCode: { type: [string, "null"] }
+        errorMessage: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+
+    PostStudio:
+      type: object
+      required: [post, reelConfig, imageAssets, renders, capabilities]
+      properties:
+        post: { $ref: "#/components/schemas/AdminPostDetail" }
+        reelConfig: { $ref: "#/components/schemas/ReelConfig" }
+        authoritativePreviewConfigHash: { type: [string, "null"] }
+        authoritativeConfigHash: { type: [string, "null"] }
+        imageAssets:
+          { type: array, items: { type: object, additionalProperties: true } }
+        renders:
+          { type: array, items: { $ref: "#/components/schemas/ReelRender" } }
+        latestPreview:
+          {
+            oneOf:
+              [{ $ref: "#/components/schemas/ReelRender" }, { type: "null" }],
+          }
+        latestFinal:
+          {
+            oneOf:
+              [{ $ref: "#/components/schemas/ReelRender" }, { type: "null" }],
+          }
+        capabilities: { type: object, additionalProperties: { type: boolean } }
+
+    RefreshAutoAudioInput:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: number, minimum: 1 }
+
+    RenderCreateInput:
+      type: object
+      required: [type, expectedConfigVersion]
+      properties:
+        type: { type: string, enum: [PREVIEW] }
+        expectedConfigVersion: { type: number, minimum: 1 }
+
+    FinalizeRenderInput:
+      type: object
+      required: [expectedConfigVersion]
+      properties:
+        expectedConfigVersion: { type: number, minimum: 1 }
 
     CorrectionInput:
       type: object

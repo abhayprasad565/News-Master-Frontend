@@ -88,7 +88,7 @@ export default function AdminX() {
                     <div key={failure.id} className="p-4 hover:bg-muted/30">
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-mono text-xs font-semibold">{failure.id.slice(0, 8)}</span>
-                        <span className="text-xs text-muted-foreground">{format(new Date(failure.sentAt || new Date()), 'MMM d, HH:mm')}</span>
+                        <span className="text-xs text-muted-foreground">{failure.sentAt ? format(new Date(failure.sentAt), 'MMM d, HH:mm') : 'Not sent'}</span>
                       </div>
                       <p className="text-xs text-destructive line-clamp-2 mb-2">{failure.lastError || 'Unknown error'}</p>
                       <Button variant="outline" size="sm" className="w-full text-xs h-7" asChild>

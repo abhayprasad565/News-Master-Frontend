@@ -5,7 +5,9 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface JsonObject { [key: string]: unknown }
+export interface JsonObject {
+  [key: string]: unknown;
+}
 
 export type HealthStatusDependencies = {
   /** @nullable */
@@ -42,14 +44,14 @@ export interface LoginInput {
   password: string;
 }
 
-export type UserSessionRole = typeof UserSessionRole[keyof typeof UserSessionRole];
-
+export type UserSessionRole =
+  (typeof UserSessionRole)[keyof typeof UserSessionRole];
 
 export const UserSessionRole = {
-  owner: 'owner',
-  admin: 'admin',
-  moderator: 'moderator',
-  reader: 'reader',
+  owner: "owner",
+  admin: "admin",
+  moderator: "moderator",
+  reader: "reader",
 } as const;
 
 export interface UserSession {
@@ -61,14 +63,14 @@ export interface AuthUser {
   user: UserSession;
 }
 
-export type MeResponseUserRole = typeof MeResponseUserRole[keyof typeof MeResponseUserRole];
-
+export type MeResponseUserRole =
+  (typeof MeResponseUserRole)[keyof typeof MeResponseUserRole];
 
 export const MeResponseUserRole = {
-  owner: 'owner',
-  admin: 'admin',
-  moderator: 'moderator',
-  reader: 'reader',
+  owner: "owner",
+  admin: "admin",
+  moderator: "moderator",
+  reader: "reader",
 } as const;
 
 /**
@@ -88,12 +90,12 @@ export interface MetricsResponse {
   prometheus: string;
 }
 
-export type LabelVisibility = typeof LabelVisibility[keyof typeof LabelVisibility];
-
+export type LabelVisibility =
+  (typeof LabelVisibility)[keyof typeof LabelVisibility];
 
 export const LabelVisibility = {
-  PUBLIC: 'PUBLIC',
-  ADMIN_ONLY: 'ADMIN_ONLY',
+  PUBLIC: "PUBLIC",
+  ADMIN_ONLY: "ADMIN_ONLY",
 } as const;
 
 export interface Label {
@@ -113,12 +115,12 @@ export interface Label {
 /**
  * @nullable
  */
-export type LabelInputVisibility = typeof LabelInputVisibility[keyof typeof LabelInputVisibility] | null;
-
+export type LabelInputVisibility =
+  (typeof LabelInputVisibility)[keyof typeof LabelInputVisibility] | null;
 
 export const LabelInputVisibility = {
-  PUBLIC: 'PUBLIC',
-  ADMIN_ONLY: 'ADMIN_ONLY',
+  PUBLIC: "PUBLIC",
+  ADMIN_ONLY: "ADMIN_ONLY",
 } as const;
 
 export interface LabelInput {
@@ -136,12 +138,12 @@ export interface LabelInput {
 /**
  * @nullable
  */
-export type LabelUpdateVisibility = typeof LabelUpdateVisibility[keyof typeof LabelUpdateVisibility] | null;
-
+export type LabelUpdateVisibility =
+  (typeof LabelUpdateVisibility)[keyof typeof LabelUpdateVisibility] | null;
 
 export const LabelUpdateVisibility = {
-  PUBLIC: 'PUBLIC',
-  ADMIN_ONLY: 'ADMIN_ONLY',
+  PUBLIC: "PUBLIC",
+  ADMIN_ONLY: "ADMIN_ONLY",
 } as const;
 
 export interface LabelUpdate {
@@ -176,13 +178,13 @@ export interface PlatformLink {
 /**
  * @nullable
  */
-export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
-
+export type StoryMediaType =
+  (typeof StoryMediaType)[keyof typeof StoryMediaType] | null;
 
 export const StoryMediaType = {
-  GRAPHIC: 'GRAPHIC',
-  TEXT_ONLY: 'TEXT_ONLY',
-  REEL: 'REEL',
+  GRAPHIC: "GRAPHIC",
+  TEXT_ONLY: "TEXT_ONLY",
+  REEL: "REEL",
 } as const;
 
 export interface StoryMedia {
@@ -193,13 +195,12 @@ export interface StoryMedia {
   mimeType?: string | null;
 }
 
-export type StoryKind = typeof StoryKind[keyof typeof StoryKind];
-
+export type StoryKind = (typeof StoryKind)[keyof typeof StoryKind];
 
 export const StoryKind = {
-  ORIGINAL: 'ORIGINAL',
-  CORRECTION: 'CORRECTION',
-  CUSTOM: 'CUSTOM',
+  ORIGINAL: "ORIGINAL",
+  CORRECTION: "CORRECTION",
+  CUSTOM: "CUSTOM",
 } as const;
 
 export interface Story {
@@ -231,25 +232,24 @@ export interface StoryList {
   nextCursor?: string | null;
 }
 
-export type AdminPostKind = typeof AdminPostKind[keyof typeof AdminPostKind];
-
+export type AdminPostKind = (typeof AdminPostKind)[keyof typeof AdminPostKind];
 
 export const AdminPostKind = {
-  ORIGINAL: 'ORIGINAL',
-  CORRECTION: 'CORRECTION',
-  CUSTOM: 'CUSTOM',
+  ORIGINAL: "ORIGINAL",
+  CORRECTION: "CORRECTION",
+  CUSTOM: "CUSTOM",
 } as const;
 
-export type AdminPostStatus = typeof AdminPostStatus[keyof typeof AdminPostStatus];
-
+export type AdminPostStatus =
+  (typeof AdminPostStatus)[keyof typeof AdminPostStatus];
 
 export const AdminPostStatus = {
-  DRAFT: 'DRAFT',
-  VALIDATING: 'VALIDATING',
-  VALIDATED: 'VALIDATED',
-  MANUAL_REVIEW: 'MANUAL_REVIEW',
-  REJECTED: 'REJECTED',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  VALIDATING: "VALIDATING",
+  VALIDATED: "VALIDATED",
+  MANUAL_REVIEW: "MANUAL_REVIEW",
+  REJECTED: "REJECTED",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
 export interface AdminPost {
@@ -292,28 +292,28 @@ export interface Publication {
   createdAt: string;
 }
 
-export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
-
+export type DeliveryStatus =
+  (typeof DeliveryStatus)[keyof typeof DeliveryStatus];
 
 export const DeliveryStatus = {
-  PENDING: 'PENDING',
-  WAITING_FOR_ASSET: 'WAITING_FOR_ASSET',
-  RENDERING: 'RENDERING',
-  READY: 'READY',
-  SENDING: 'SENDING',
-  SENT: 'SENT',
-  RETRY: 'RETRY',
-  FAILED: 'FAILED',
-  DEAD: 'DEAD',
-  UNKNOWN: 'UNKNOWN',
+  PENDING: "PENDING",
+  WAITING_FOR_ASSET: "WAITING_FOR_ASSET",
+  RENDERING: "RENDERING",
+  READY: "READY",
+  SENDING: "SENDING",
+  SENT: "SENT",
+  RETRY: "RETRY",
+  FAILED: "FAILED",
+  DEAD: "DEAD",
+  UNKNOWN: "UNKNOWN",
 } as const;
 
-export type DeliveryFormat = typeof DeliveryFormat[keyof typeof DeliveryFormat];
-
+export type DeliveryFormat =
+  (typeof DeliveryFormat)[keyof typeof DeliveryFormat];
 
 export const DeliveryFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;
 
 export interface Delivery {
@@ -333,44 +333,45 @@ export interface Delivery {
   sentAt?: string | null;
 }
 
-export type AdminPostDetailKind = typeof AdminPostDetailKind[keyof typeof AdminPostDetailKind];
-
+export type AdminPostDetailKind =
+  (typeof AdminPostDetailKind)[keyof typeof AdminPostDetailKind];
 
 export const AdminPostDetailKind = {
-  ORIGINAL: 'ORIGINAL',
-  CORRECTION: 'CORRECTION',
-  CUSTOM: 'CUSTOM',
+  ORIGINAL: "ORIGINAL",
+  CORRECTION: "CORRECTION",
+  CUSTOM: "CUSTOM",
 } as const;
 
-export type AdminPostDetailStatus = typeof AdminPostDetailStatus[keyof typeof AdminPostDetailStatus];
-
+export type AdminPostDetailStatus =
+  (typeof AdminPostDetailStatus)[keyof typeof AdminPostDetailStatus];
 
 export const AdminPostDetailStatus = {
-  DRAFT: 'DRAFT',
-  VALIDATING: 'VALIDATING',
-  VALIDATED: 'VALIDATED',
-  MANUAL_REVIEW: 'MANUAL_REVIEW',
-  REJECTED: 'REJECTED',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  VALIDATING: "VALIDATING",
+  VALIDATED: "VALIDATED",
+  MANUAL_REVIEW: "MANUAL_REVIEW",
+  REJECTED: "REJECTED",
+  PUBLISHED: "PUBLISHED",
 } as const;
 
-export type AdminPostDetailGraphicSourceMode = typeof AdminPostDetailGraphicSourceMode[keyof typeof AdminPostDetailGraphicSourceMode];
-
+export type AdminPostDetailGraphicSourceMode =
+  (typeof AdminPostDetailGraphicSourceMode)[keyof typeof AdminPostDetailGraphicSourceMode];
 
 export const AdminPostDetailGraphicSourceMode = {
-  AUTO: 'AUTO',
-  NO_SOURCE_IMAGE: 'NO_SOURCE_IMAGE',
+  AUTO: "AUTO",
+  NO_SOURCE_IMAGE: "NO_SOURCE_IMAGE",
 } as const;
 
 /**
  * @nullable
  */
-export type AdminPostDetailAudioSelectionMode = typeof AdminPostDetailAudioSelectionMode[keyof typeof AdminPostDetailAudioSelectionMode] | null;
-
+export type AdminPostDetailAudioSelectionMode =
+  | (typeof AdminPostDetailAudioSelectionMode)[keyof typeof AdminPostDetailAudioSelectionMode]
+  | null;
 
 export const AdminPostDetailAudioSelectionMode = {
-  AUTO: 'AUTO',
-  MANUAL: 'MANUAL',
+  AUTO: "AUTO",
+  MANUAL: "MANUAL",
 } as const;
 
 export interface AdminPostDetail {
@@ -423,12 +424,13 @@ export interface AdminPostDetail {
 /**
  * @nullable
  */
-export type PostInputAudioSelectionMode = typeof PostInputAudioSelectionMode[keyof typeof PostInputAudioSelectionMode] | null;
-
+export type PostInputAudioSelectionMode =
+  | (typeof PostInputAudioSelectionMode)[keyof typeof PostInputAudioSelectionMode]
+  | null;
 
 export const PostInputAudioSelectionMode = {
-  AUTO: 'AUTO',
-  MANUAL: 'MANUAL',
+  AUTO: "AUTO",
+  MANUAL: "MANUAL",
 } as const;
 
 export interface PostInput {
@@ -440,9 +442,9 @@ export interface PostInput {
   /** @nullable */
   labelIds?: string[] | null;
   /**
-     * @maxLength 10485760
-     * @nullable
-     */
+   * @maxLength 10485760
+   * @nullable
+   */
   imageBase64?: string | null;
   /** @nullable */
   audioTrackId?: string | null;
@@ -465,12 +467,13 @@ export interface PostInput {
 /**
  * @nullable
  */
-export type PostUpdateAudioSelectionMode = typeof PostUpdateAudioSelectionMode[keyof typeof PostUpdateAudioSelectionMode] | null;
-
+export type PostUpdateAudioSelectionMode =
+  | (typeof PostUpdateAudioSelectionMode)[keyof typeof PostUpdateAudioSelectionMode]
+  | null;
 
 export const PostUpdateAudioSelectionMode = {
-  AUTO: 'AUTO',
-  MANUAL: 'MANUAL',
+  AUTO: "AUTO",
+  MANUAL: "MANUAL",
 } as const;
 
 export interface PostUpdate {
@@ -483,9 +486,9 @@ export interface PostUpdate {
   /** @nullable */
   labelIds?: string[] | null;
   /**
-     * @maxLength 10485760
-     * @nullable
-     */
+   * @maxLength 10485760
+   * @nullable
+   */
   imageBase64?: string | null;
   /** @nullable */
   audioTrackId?: string | null;
@@ -505,33 +508,296 @@ export interface PostUpdate {
   reelFadeOutSeconds?: number | null;
 }
 
-export type DestinationPlatform = typeof DestinationPlatform[keyof typeof DestinationPlatform];
-
+export type DestinationPlatform =
+  (typeof DestinationPlatform)[keyof typeof DestinationPlatform];
 
 export const DestinationPlatform = {
-  telegram: 'telegram',
-  instagram: 'instagram',
-  x: 'x',
-  webhook: 'webhook',
-  whatsapp: 'whatsapp',
+  telegram: "telegram",
+  instagram: "instagram",
+  youtube: "youtube",
+  x: "x",
+  webhook: "webhook",
+  whatsapp: "whatsapp",
 } as const;
 
-export type DestinationFormat = typeof DestinationFormat[keyof typeof DestinationFormat];
-
+export type DestinationFormat =
+  (typeof DestinationFormat)[keyof typeof DestinationFormat];
 
 export const DestinationFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;
+
+export type DestinationOptionsPrivacyStatus =
+  (typeof DestinationOptionsPrivacyStatus)[keyof typeof DestinationOptionsPrivacyStatus];
+
+export const DestinationOptionsPrivacyStatus = {
+  private: "private",
+  unlisted: "unlisted",
+  public: "public",
+} as const;
+
+export type DestinationOptions = {
+  /** @maxLength 100 */
+  title: string;
+  /** @maxLength 5000 */
+  description: string;
+  privacyStatus: DestinationOptionsPrivacyStatus;
+};
 
 export interface Destination {
   platform: DestinationPlatform;
   destination: string;
   format?: DestinationFormat;
+  options?: DestinationOptions;
 }
 
 export interface PublishInput {
   destinations: Destination[];
+}
+
+export type ReelConfigVisualMode =
+  (typeof ReelConfigVisualMode)[keyof typeof ReelConfigVisualMode];
+
+export const ReelConfigVisualMode = {
+  ORIGINAL: "ORIGINAL",
+  CUSTOM: "CUSTOM",
+  GENERATED: "GENERATED",
+  NONE: "NONE",
+} as const;
+
+export type ReelConfigVisual = {
+  mode: ReelConfigVisualMode;
+  /** @nullable */
+  assetId: string | null;
+};
+
+export type ReelConfigAudioMode =
+  (typeof ReelConfigAudioMode)[keyof typeof ReelConfigAudioMode];
+
+export const ReelConfigAudioMode = {
+  AUTO: "AUTO",
+  TRACK: "TRACK",
+  UPLOAD: "UPLOAD",
+  NONE: "NONE",
+} as const;
+
+export type ReelConfigAudioAutoFiltersEnergy =
+  (typeof ReelConfigAudioAutoFiltersEnergy)[keyof typeof ReelConfigAudioAutoFiltersEnergy];
+
+export const ReelConfigAudioAutoFiltersEnergy = {
+  CALM: "CALM",
+  NEUTRAL: "NEUTRAL",
+  UPBEAT: "UPBEAT",
+} as const;
+
+export type ReelConfigAudioAutoFilters = {
+  theme?: string;
+  energy?: ReelConfigAudioAutoFiltersEnergy;
+  tags: string[];
+};
+
+export type ReelConfigAudio = {
+  mode: ReelConfigAudioMode;
+  /** @nullable */
+  trackId: string | null;
+  autoFilters: ReelConfigAudioAutoFilters;
+  startSeconds: number;
+  volume: number;
+  fadeInSeconds: number;
+  fadeOutSeconds: number;
+};
+
+export type ReelConfigRenderingTemplate =
+  (typeof ReelConfigRenderingTemplate)[keyof typeof ReelConfigRenderingTemplate];
+
+export const ReelConfigRenderingTemplate = {
+  "scrollbrief-card-v1": "scrollbrief-card-v1",
+} as const;
+
+export type ReelConfigRendering = {
+  /**
+   * @minimum 3
+   * @maximum 90
+   */
+  durationSeconds: number;
+  template: ReelConfigRenderingTemplate;
+};
+
+export type ReelConfigDisclosure = {
+  /** @nullable */
+  containsSyntheticMedia: boolean | null;
+};
+
+export interface ReelConfig {
+  postId: string;
+  version: number;
+  visual: ReelConfigVisual;
+  audio: ReelConfigAudio;
+  rendering: ReelConfigRendering;
+  disclosure: ReelConfigDisclosure;
+  updatedAt: string;
+  /** @nullable */
+  updatedBy?: string | null;
+}
+
+export type ReelConfigUpdateVisualMode =
+  (typeof ReelConfigUpdateVisualMode)[keyof typeof ReelConfigUpdateVisualMode];
+
+export const ReelConfigUpdateVisualMode = {
+  ORIGINAL: "ORIGINAL",
+  CUSTOM: "CUSTOM",
+  GENERATED: "GENERATED",
+  NONE: "NONE",
+} as const;
+
+export type ReelConfigUpdateVisual = {
+  mode: ReelConfigUpdateVisualMode;
+  /** @nullable */
+  assetId: string | null;
+};
+
+export type ReelConfigUpdateAudioMode =
+  (typeof ReelConfigUpdateAudioMode)[keyof typeof ReelConfigUpdateAudioMode];
+
+export const ReelConfigUpdateAudioMode = {
+  AUTO: "AUTO",
+  TRACK: "TRACK",
+  UPLOAD: "UPLOAD",
+  NONE: "NONE",
+} as const;
+
+export type ReelConfigUpdateAudioAutoFiltersEnergy =
+  (typeof ReelConfigUpdateAudioAutoFiltersEnergy)[keyof typeof ReelConfigUpdateAudioAutoFiltersEnergy];
+
+export const ReelConfigUpdateAudioAutoFiltersEnergy = {
+  CALM: "CALM",
+  NEUTRAL: "NEUTRAL",
+  UPBEAT: "UPBEAT",
+} as const;
+
+export type ReelConfigUpdateAudioAutoFilters = {
+  theme?: string;
+  energy?: ReelConfigUpdateAudioAutoFiltersEnergy;
+  tags: string[];
+};
+
+export type ReelConfigUpdateAudio = {
+  mode: ReelConfigUpdateAudioMode;
+  /** @nullable */
+  trackId: string | null;
+  autoFilters: ReelConfigUpdateAudioAutoFilters;
+  startSeconds: number;
+  volume: number;
+  fadeInSeconds: number;
+  fadeOutSeconds: number;
+};
+
+export type ReelConfigUpdateRenderingTemplate =
+  (typeof ReelConfigUpdateRenderingTemplate)[keyof typeof ReelConfigUpdateRenderingTemplate];
+
+export const ReelConfigUpdateRenderingTemplate = {
+  "scrollbrief-card-v1": "scrollbrief-card-v1",
+} as const;
+
+export type ReelConfigUpdateRendering = {
+  /**
+   * @minimum 3
+   * @maximum 90
+   */
+  durationSeconds: number;
+  template: ReelConfigUpdateRenderingTemplate;
+};
+
+export type ReelConfigUpdateDisclosure = {
+  /** @nullable */
+  containsSyntheticMedia: boolean | null;
+};
+
+export interface ReelConfigUpdate {
+  /** @minimum 1 */
+  expectedVersion: number;
+  visual: ReelConfigUpdateVisual;
+  audio: ReelConfigUpdateAudio;
+  rendering: ReelConfigUpdateRendering;
+  disclosure: ReelConfigUpdateDisclosure;
+}
+
+export type ReelRenderType =
+  (typeof ReelRenderType)[keyof typeof ReelRenderType];
+
+export const ReelRenderType = {
+  PREVIEW: "PREVIEW",
+  FINAL: "FINAL",
+} as const;
+
+export type ReelRenderStatus =
+  (typeof ReelRenderStatus)[keyof typeof ReelRenderStatus];
+
+export const ReelRenderStatus = {
+  QUEUED: "QUEUED",
+  RENDERING: "RENDERING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+} as const;
+
+export interface ReelRender {
+  id: string;
+  postId: string;
+  type: ReelRenderType;
+  status: ReelRenderStatus;
+  configVersion: number;
+  configHash: string;
+  /** @nullable */
+  outputAssetId?: string | null;
+  /** @nullable */
+  outputUrl?: string | null;
+  /** @nullable */
+  errorCode?: string | null;
+  /** @nullable */
+  errorMessage?: string | null;
+  createdAt: string;
+}
+
+export type PostStudioImageAssetsItem = { [key: string]: unknown };
+
+export type PostStudioCapabilities = { [key: string]: boolean };
+
+export interface PostStudio {
+  post: AdminPostDetail;
+  reelConfig: ReelConfig;
+  /** @nullable */
+  authoritativePreviewConfigHash?: string | null;
+  /** @nullable */
+  authoritativeConfigHash?: string | null;
+  imageAssets: PostStudioImageAssetsItem[];
+  renders: ReelRender[];
+  latestPreview?: ReelRender | null;
+  latestFinal?: ReelRender | null;
+  capabilities: PostStudioCapabilities;
+}
+
+export interface RefreshAutoAudioInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+}
+
+export type RenderCreateInputType =
+  (typeof RenderCreateInputType)[keyof typeof RenderCreateInputType];
+
+export const RenderCreateInputType = {
+  PREVIEW: "PREVIEW",
+} as const;
+
+export interface RenderCreateInput {
+  type: RenderCreateInputType;
+  /** @minimum 1 */
+  expectedConfigVersion: number;
+}
+
+export interface FinalizeRenderInput {
+  /** @minimum 1 */
+  expectedConfigVersion: number;
 }
 
 export interface CorrectionInput {
@@ -562,14 +828,14 @@ export interface ReviewJobList {
   nextCursor?: string | null;
 }
 
-export type ReviewActionInputAction = typeof ReviewActionInputAction[keyof typeof ReviewActionInputAction];
-
+export type ReviewActionInputAction =
+  (typeof ReviewActionInputAction)[keyof typeof ReviewActionInputAction];
 
 export const ReviewActionInputAction = {
-  APPROVE: 'APPROVE',
-  REJECT: 'REJECT',
-  REQUEUE: 'REQUEUE',
-  REQUEST_CORRECTION: 'REQUEST_CORRECTION',
+  APPROVE: "APPROVE",
+  REJECT: "REJECT",
+  REQUEUE: "REQUEUE",
+  REQUEST_CORRECTION: "REQUEST_CORRECTION",
 } as const;
 
 export interface ReviewActionInput {
@@ -609,13 +875,13 @@ export interface TopicList {
   items: TopicSignal[];
 }
 
-export type TopicOverrideInputMode = typeof TopicOverrideInputMode[keyof typeof TopicOverrideInputMode];
-
+export type TopicOverrideInputMode =
+  (typeof TopicOverrideInputMode)[keyof typeof TopicOverrideInputMode];
 
 export const TopicOverrideInputMode = {
-  BOOST: 'BOOST',
-  PIN: 'PIN',
-  SUPPRESS: 'SUPPRESS',
+  BOOST: "BOOST",
+  PIN: "PIN",
+  SUPPRESS: "SUPPRESS",
 } as const;
 
 export interface TopicOverrideInput {
@@ -691,13 +957,13 @@ export interface RetryInput {
   reason: string;
 }
 
-export type ReconcileInputOutcome = typeof ReconcileInputOutcome[keyof typeof ReconcileInputOutcome];
-
+export type ReconcileInputOutcome =
+  (typeof ReconcileInputOutcome)[keyof typeof ReconcileInputOutcome];
 
 export const ReconcileInputOutcome = {
-  SENT: 'SENT',
-  NOT_SENT: 'NOT_SENT',
-  FAILED: 'FAILED',
+  SENT: "SENT",
+  NOT_SENT: "NOT_SENT",
+  FAILED: "FAILED",
 } as const;
 
 export interface ReconcileInput {
@@ -705,12 +971,12 @@ export interface ReconcileInput {
   reason: string;
 }
 
-export type PlatformPostFormat = typeof PlatformPostFormat[keyof typeof PlatformPostFormat];
-
+export type PlatformPostFormat =
+  (typeof PlatformPostFormat)[keyof typeof PlatformPostFormat];
 
 export const PlatformPostFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;
 
 export interface PlatformPost {
@@ -767,113 +1033,147 @@ export interface PlatformPostDetail {
   delivery?: Delivery;
 }
 
+export type ConnectYouTube200 = {
+  authorizationUrl: string;
+};
+
+export type CompleteYouTubeConnectionParams = {
+  code: string;
+  state: string;
+};
+
+export type GetYouTubeIntegrationStatus200ConnectionStatus =
+  (typeof GetYouTubeIntegrationStatus200ConnectionStatus)[keyof typeof GetYouTubeIntegrationStatus200ConnectionStatus];
+
+export const GetYouTubeIntegrationStatus200ConnectionStatus = {
+  ACTIVE: "ACTIVE",
+} as const;
+
+export type GetYouTubeIntegrationStatus200Connection = {
+  id: string;
+  channelId: string;
+  channelName: string;
+  status: GetYouTubeIntegrationStatus200ConnectionStatus;
+  connectedAt: string;
+} | null;
+
+export type GetYouTubeIntegrationStatus200 = {
+  enabled: boolean;
+  configured: boolean;
+  publicUploadsApproved: boolean;
+  connection: GetYouTubeIntegrationStatus200Connection;
+};
+
 export type GetStoriesParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-label?: string | null;
-/**
- * @nullable
- */
-q?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  label?: string | null;
+  /**
+   * @nullable
+   */
+  q?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
+  /**
+   * @nullable
+   */
+  from?: string | null;
+  /**
+   * @nullable
+   */
+  to?: string | null;
 };
 
 export type GetAdminPostsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-kind?: string | null;
-/**
- * @nullable
- */
-includeArchived?: boolean | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  status?: string | null;
+  /**
+   * @nullable
+   */
+  kind?: string | null;
+  /**
+   * @nullable
+   */
+  includeArchived?: boolean | null;
+};
+
+export type ListPostRenders200 = {
+  items: ReelRender[];
 };
 
 export type GetReviewQueueParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
 };
 
 export type GetPublicationsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
 };
 
 export type GetDeliveriesParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  status?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
 };
 
 export type GetPlatformPostsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
 };
-

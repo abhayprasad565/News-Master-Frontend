@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdminPostDetailKind = typeof AdminPostDetailKind[keyof typeof AdminPostDetailKind];
-
+export type AdminPostDetailKind =
+  (typeof AdminPostDetailKind)[keyof typeof AdminPostDetailKind];
 
 export const AdminPostDetailKind = {
-  ORIGINAL: 'ORIGINAL',
-  CORRECTION: 'CORRECTION',
-  CUSTOM: 'CUSTOM',
+  ORIGINAL: "ORIGINAL",
+  CORRECTION: "CORRECTION",
+  CUSTOM: "CUSTOM",
 } as const;

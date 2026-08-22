@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { PlatformPost } from './platformPost';
+import type { PlatformPost } from "./platformPost";
 
 export interface PlatformPostList {
   items: PlatformPost[];

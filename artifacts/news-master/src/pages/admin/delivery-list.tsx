@@ -1,45 +1,108 @@
-import { useState } from 'react';
-import { useGetDeliveries, DeliveryStatus } from '@workspace/api-client-react';
-import { Link } from 'wouter';
-import { format } from 'date-fns';
-import { Send, AlertCircle, CheckCircle2, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { useGetDeliveries, DeliveryStatus } from "@workspace/api-client-react";
+import { Link } from "wouter";
+import { format } from "date-fns";
+import { Send, AlertCircle, CheckCircle2, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminDeliveryList() {
-  const [status, setStatus] = useState<string>('all');
-  const [platform, setPlatform] = useState<string>('all');
+  const [status, setStatus] = useState<string>("all");
+  const [platform, setPlatform] = useState<string>("all");
 
   const { data, isLoading, error } = useGetDeliveries({
-    status: status !== 'all' ? status : undefined,
-    platform: platform !== 'all' ? platform : undefined,
+    status: status !== "all" ? status : undefined,
+    platform: platform !== "all" ? platform : undefined,
     limit: 50,
   });
 
   const getDeliveryStatusBadge = (s: string) => {
     switch (s) {
-      case 'SENT': return <Badge className="bg-emerald-500 hover:bg-emerald-600"><CheckCircle2 className="w-3 h-3 mr-1"/> Sent</Badge>;
-      case 'FAILED': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Failed</Badge>;
-      case 'DEAD': return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1"/> Dead</Badge>;
-      case 'PENDING': return <Badge variant="secondary">Pending</Badge>;
-      case 'WAITING_FOR_ASSET': return <Badge variant="outline" className="border-slate-500 text-slate-600">Waiting for asset</Badge>;
-      case 'RENDERING': return <Badge variant="outline" className="border-indigo-500 text-indigo-600">Rendering</Badge>;
-      case 'READY': return <Badge variant="outline" className="border-cyan-500 text-cyan-600">Ready</Badge>;
-      case 'SENDING': return <Badge variant="outline" className="border-blue-500 text-blue-600">Sending...</Badge>;
-      case 'RETRY': return <Badge variant="outline" className="border-amber-500 text-amber-600">Retry</Badge>;
-      case 'UNKNOWN': return <Badge variant="outline" className="border-purple-500 text-purple-600">Unknown</Badge>;
-      default: return <Badge variant="outline">{s}</Badge>;
+      case "SENT":
+        return (
+          <Badge className="bg-emerald-500 hover:bg-emerald-600">
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Sent
+          </Badge>
+        );
+      case "FAILED":
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="w-3 h-3 mr-1" /> Failed
+          </Badge>
+        );
+      case "DEAD":
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="w-3 h-3 mr-1" /> Dead
+          </Badge>
+        );
+      case "PENDING":
+        return <Badge variant="secondary">Pending</Badge>;
+      case "WAITING_FOR_ASSET":
+        return (
+          <Badge variant="outline" className="border-slate-500 text-slate-600">
+            Waiting for asset
+          </Badge>
+        );
+      case "RENDERING":
+        return (
+          <Badge
+            variant="outline"
+            className="border-indigo-500 text-indigo-600"
+          >
+            Rendering
+          </Badge>
+        );
+      case "READY":
+        return (
+          <Badge variant="outline" className="border-cyan-500 text-cyan-600">
+            Ready
+          </Badge>
+        );
+      case "SENDING":
+        return (
+          <Badge variant="outline" className="border-blue-500 text-blue-600">
+            Sending...
+          </Badge>
+        );
+      case "RETRY":
+        return (
+          <Badge variant="outline" className="border-amber-500 text-amber-600">
+            Retry
+          </Badge>
+        );
+      case "UNKNOWN":
+        return (
+          <Badge
+            variant="outline"
+            className="border-purple-500 text-purple-600"
+          >
+            Unknown
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{s}</Badge>;
     }
   };
 
   return (
     <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">Deliveries</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Monitor the status of content pushed to external platforms.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">
+          Deliveries
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+          Monitor the status of content pushed to external platforms.
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
@@ -49,8 +112,10 @@ export default function AdminDeliveryList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {Object.values(DeliveryStatus).map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
+            {Object.values(DeliveryStatus).map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -62,6 +127,7 @@ export default function AdminDeliveryList() {
           <SelectContent>
             <SelectItem value="all">All Platforms</SelectItem>
             <SelectItem value="instagram">Instagram</SelectItem>
+            <SelectItem value="youtube">YouTube</SelectItem>
             <SelectItem value="x">X (Twitter)</SelectItem>
             <SelectItem value="telegram">Telegram</SelectItem>
             <SelectItem value="whatsapp">WhatsApp</SelectItem>
@@ -88,18 +154,35 @@ export default function AdminDeliveryList() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-20" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-16" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-32" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-24" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-8" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-32" /></td>
-                    <td className="px-4 py-4"><Skeleton className="h-5 w-12" /></td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-20" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-16" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-32" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-24" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-8" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-32" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <Skeleton className="h-5 w-12" />
+                    </td>
                   </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-destructive">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-destructive"
+                  >
                     Failed to load deliveries.
                   </td>
                 </tr>
@@ -108,26 +191,47 @@ export default function AdminDeliveryList() {
                   <td colSpan={7} className="px-4 py-12 text-center">
                     <Send className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                     <p className="font-medium">No deliveries found</p>
-                    <p className="text-sm text-muted-foreground">Try adjusting your filters.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your filters.
+                    </p>
                   </td>
                 </tr>
               ) : (
                 data.items.map((del) => (
-                  <tr key={del.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-medium capitalize">{del.platform}</td>
+                  <tr
+                    key={del.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-medium capitalize">
+                      {del.platform}
+                    </td>
                     <td className="px-4 py-3">
-                      <Badge variant={del.format === 'REEL' ? 'default' : 'outline'} className="text-[10px]">
-                        {del.format ?? 'IMAGE'}
+                      <Badge
+                        variant={del.format === "REEL" ? "default" : "outline"}
+                        className="text-[10px]"
+                      >
+                        {del.format ?? "IMAGE"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs">{del.destination || '-'}</td>
-                    <td className="px-4 py-3">{getDeliveryStatusBadge(del.status)}</td>
-                    <td className="px-4 py-3 text-center">{del.attemptCount}</td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {del.sentAt ? format(new Date(del.sentAt), 'MMM d, HH:mm:ss') : '-'}
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {del.destination || "-"}
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/admin/deliveries/${del.id}`} className="text-primary hover:underline font-medium">
+                      {getDeliveryStatusBadge(del.status)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {del.attemptCount}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {del.sentAt
+                        ? format(new Date(del.sentAt), "MMM d, HH:mm:ss")
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/deliveries/${del.id}`}
+                        className="text-primary hover:underline font-medium"
+                      >
                         View
                       </Link>
                     </td>

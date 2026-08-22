@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { UserSessionRole } from './userSessionRole';
+import type { UserSessionRole } from "./userSessionRole";
 
 export interface UserSession {
   email: string;

@@ -9,10 +9,11 @@
 /**
  * @nullable
  */
-export type PostUpdateAudioSelectionMode = typeof PostUpdateAudioSelectionMode[keyof typeof PostUpdateAudioSelectionMode] | null;
-
+export type PostUpdateAudioSelectionMode =
+  | (typeof PostUpdateAudioSelectionMode)[keyof typeof PostUpdateAudioSelectionMode]
+  | null;
 
 export const PostUpdateAudioSelectionMode = {
-  AUTO: 'AUTO',
-  MANUAL: 'MANUAL',
+  AUTO: "AUTO",
+  MANUAL: "MANUAL",
 } as const;

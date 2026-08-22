@@ -5,9 +5,9 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminPostKind } from './adminPostKind';
-import type { AdminPostStatus } from './adminPostStatus';
-import type { Label } from './label';
+import type { AdminPostKind } from "./adminPostKind";
+import type { AdminPostStatus } from "./adminPostStatus";
+import type { Label } from "./label";
 
 export interface AdminPost {
   id: string;

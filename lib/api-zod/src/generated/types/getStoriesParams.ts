@@ -7,32 +7,32 @@
  */
 
 export type GetStoriesParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-label?: string | null;
-/**
- * @nullable
- */
-q?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  label?: string | null;
+  /**
+   * @nullable
+   */
+  q?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
+  /**
+   * @nullable
+   */
+  from?: string | null;
+  /**
+   * @nullable
+   */
+  to?: string | null;
 };

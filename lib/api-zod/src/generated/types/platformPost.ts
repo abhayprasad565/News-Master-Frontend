@@ -5,8 +5,8 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { JsonObject } from './jsonObject';
-import type { PlatformPostFormat } from './platformPostFormat';
+import type { JsonObject } from "./jsonObject";
+import type { PlatformPostFormat } from "./platformPostFormat";
 
 export interface PlatformPost {
   id: string;
