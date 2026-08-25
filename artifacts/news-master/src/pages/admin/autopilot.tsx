@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bot, CheckCircle2, Clock3, ShieldAlert, XCircle } from 'lucide-react';
+import { Bot, CheckCircle2, Clock3, ShieldAlert, XCircle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiFetch } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Link } from 'wouter';
 
 type AutopilotDecision = {
   id: string;
@@ -24,6 +27,9 @@ type AutopilotDecision = {
   visualAssetType: string | null;
   createdPublicationId: string | null;
   decidedAt: string;
+  postTitle?: string | null;
+  postPreview?: string | null;
+  postStatus?: string | null;
 };
 
 type AutopilotResponse = {
@@ -38,13 +44,22 @@ type AutopilotResponse = {
   perTopicMaxPerDay: number;
   urgentReservedPerDay: number;
   decisions: AutopilotDecision[];
+  total?: number;
+  hasMore?: boolean;
 };
 
 export default function AdminAutopilot() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-autopilot'],
-    queryFn: () => apiFetch<AutopilotResponse>('/api/admin/autopilot'),
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
+
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ['admin-autopilot', page],
+    queryFn: () => apiFetch<AutopilotResponse>(`/api/admin/autopilot?limit=${pageSize}&offset=${offset}`),
   });
+
+  const total = data?.total ?? data?.decisions?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const mode = data?.mode ?? 'shadow';
   const active = data?.enabled && mode === 'enabled';
@@ -111,18 +126,30 @@ export default function AdminAutopilot() {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     {item.decision === 'APPROVED' || item.decision === 'WOULD_APPROVE' ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-destructive" />
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
                     )}
                     <Badge variant={variantFor(item.decision)}>{item.decision}</Badge>
                   </div>
                   <span className="font-mono font-bold text-sm">Score: {item.scoreSnapshot.importanceScore ?? '-'}</span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
-                  <span>Post ID: {item.postId.slice(0, 10)}...</span>
-                  <span>{item.scoreSnapshot.priorityTier ?? '-'} / {item.scoreSnapshot.primaryCategory ?? '-'}</span>
+                <div className="space-y-1">
+                  <Link href={`/admin/posts/${item.postId}`} className="text-sm font-medium hover:underline text-foreground line-clamp-2">
+                    {item.postTitle || item.postPreview || `Post #${item.postId.slice(0, 8)}`}
+                  </Link>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/admin/posts/${item.postId}`} className="hover:underline text-primary font-bold">
+                        #{item.postId.slice(0, 8)}
+                      </Link>
+                      {item.postStatus && (
+                        <Badge variant="outline" className="text-[10px] py-0">{item.postStatus}</Badge>
+                      )}
+                    </div>
+                    <span>{item.scoreSnapshot.priorityTier ?? '-'} / {item.scoreSnapshot.primaryCategory ?? '-'}</span>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1">
@@ -157,7 +184,7 @@ export default function AdminAutopilot() {
           <table className="w-full text-left text-sm table-auto">
             <thead className="border-b bg-muted/50 text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Decision</th>
+                <th className="px-4 py-3 font-medium">Decision & Post</th>
                 <th className="px-4 py-3 font-medium">Score</th>
                 <th className="px-4 py-3 font-medium">Destinations</th>
                 <th className="px-4 py-3 font-medium">Blockers</th>
@@ -189,13 +216,25 @@ export default function AdminAutopilot() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {item.decision === 'APPROVED' || item.decision === 'WOULD_APPROVE' ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                         ) : (
-                          <XCircle className="h-4 w-4 text-destructive" />
+                          <XCircle className="h-4 w-4 text-destructive shrink-0" />
                         )}
                         <Badge variant={variantFor(item.decision)}>{item.decision}</Badge>
                       </div>
-                      <div className="mt-1 font-mono text-xs text-muted-foreground">{item.postId.slice(0, 8)}</div>
+                      <div className="mt-1.5 max-w-[320px]">
+                        <Link href={`/admin/posts/${item.postId}`} className="text-xs font-medium hover:underline text-foreground line-clamp-2 block leading-snug">
+                          {item.postTitle || item.postPreview || `Post #${item.postId.slice(0, 8)}`}
+                        </Link>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Link href={`/admin/posts/${item.postId}`} className="font-mono text-[11px] text-primary hover:underline font-semibold">
+                            #{item.postId.slice(0, 8)}
+                          </Link>
+                          {item.postStatus && (
+                            <Badge variant="outline" className="text-[9px] py-0 px-1 text-muted-foreground">{item.postStatus}</Badge>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-mono text-lg font-semibold">{item.scoreSnapshot.importanceScore ?? '-'}</div>
@@ -230,6 +269,35 @@ export default function AdminAutopilot() {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t bg-muted/20 text-xs text-muted-foreground gap-3">
+          <div>
+            Showing {data?.decisions?.length || 0} of {total} decisions {totalPages > 1 && `(Page ${page} of ${totalPages})`}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || isLoading || isFetching}
+              className="h-8 px-3"
+            >
+              <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+              Previous
+            </Button>
+            <span className="font-medium px-2">Page {page} of {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || isLoading || isFetching}
+              className="h-8 px-3"
+            >
+              Next
+              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

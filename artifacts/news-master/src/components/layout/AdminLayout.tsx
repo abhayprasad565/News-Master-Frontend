@@ -13,7 +13,6 @@ import {
   ScrollText,
   User,
   BarChart3,
-  Flame,
   SlidersHorizontal,
   Bot,
   Music2,
@@ -39,7 +38,6 @@ const adminNav = [
   { name: "Ranking", href: "/admin/ranking", icon: BarChart3 },
   { name: "Autopilot", href: "/admin/autopilot", icon: Bot },
   { name: "Audio", href: "/admin/audio", icon: Music2 },
-  { name: "Urgent", href: "/admin/urgent", icon: Flame },
   { name: "Topic Rules", href: "/admin/topic-rules", icon: SlidersHorizontal },
   { name: "Review Queue", href: "/admin/review", icon: ListChecks },
   { name: "Posts", href: "/admin/posts", icon: FileText },
@@ -98,9 +96,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-[100dvh] bg-muted/40 w-full overflow-x-hidden">
+    <div className="flex min-h-[100dvh] bg-muted/40 w-full">
       {/* Desktop Fixed Sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-20 w-64 flex-col border-r bg-background">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-64 flex-col border-r bg-background">
         <div className="flex h-14 items-center justify-between border-b px-6">
           <Link href="/admin" className="flex items-center gap-3">
             <Logo className="h-7 w-auto" />
@@ -112,8 +110,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content Shell */}
       <main className="flex-1 lg:pl-64 flex flex-col min-w-0 w-full">
-        {/* Mobile / Tablet Sticky Header */}
-        <header className="flex lg:hidden h-14 items-center justify-between border-b bg-background px-4 sticky top-0 z-30">
+        {/* Mobile / Tablet Fixed Header */}
+        <header className="flex lg:hidden fixed top-0 left-0 right-0 h-14 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4 z-30 shadow-xs">
           <Link href="/admin" className="flex items-center gap-2">
             <Logo className="h-6 w-auto" />
           </Link>
@@ -149,8 +147,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Desktop Top Header */}
-        <div className="hidden lg:flex h-14 border-b bg-background items-center justify-between px-8">
+        {/* Desktop Fixed Top Header */}
+        <div className="hidden lg:flex fixed top-0 right-0 left-64 h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 items-center justify-between px-8 z-30 shadow-xs">
           <h1 className="text-sm font-medium text-muted-foreground">
             Admin Portal
           </h1>
@@ -171,7 +169,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Page Content Container */}
-        <div className="p-3 sm:p-5 lg:p-8 w-full min-w-0 max-w-full">
+        <div className="pt-[68px] sm:pt-[72px] lg:pt-[76px] px-3 sm:px-5 lg:px-8 pb-6 sm:pb-8 lg:pb-12 w-full min-w-0 max-w-full">
           {children}
         </div>
       </main>

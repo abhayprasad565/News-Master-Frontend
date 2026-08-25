@@ -16,6 +16,8 @@ import {
   RotateCcw,
   AlertTriangle,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,14 +47,31 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 
 export default function AdminReviewQueue() {
-  const { data: queueData, isLoading: queueLoading, error: queueError } = useQuery({
-    queryKey: ["adminReviewQueue"],
-    queryFn: () => apiFetch<{ items: any[]; nextCursor?: string }>("/api/admin/review?limit=20"),
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+  const [currentCursor, setCurrentCursor] = useState<string | undefined>(undefined);
+  const currentPage = cursorHistory.length + 1;
+
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ["adminReviewQueue", currentCursor],
+    queryFn: () => apiFetch<{ items: any[]; nextCursor?: string }>(
+      `/api/admin/review?limit=20${currentCursor ? `&cursor=${encodeURIComponent(currentCursor)}` : ''}`
+    ),
   });
-  const hookResult = useGetReviewQueue({ limit: 20 });
-  const data = queueData ?? hookResult.data;
-  const isLoading = queueLoading && hookResult.isLoading;
-  const error = queueError && hookResult.error;
+
+  const handleNextPage = () => {
+    if (data?.nextCursor) {
+      setCursorHistory((prev) => [...prev, currentCursor || ""]);
+      setCurrentCursor(data.nextCursor);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (cursorHistory.length > 0) {
+      const prevCursor = cursorHistory[cursorHistory.length - 1];
+      setCursorHistory((prev) => prev.slice(0, -1));
+      setCurrentCursor(prevCursor || undefined);
+    }
+  };
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [actionReason, setActionReason] = useState("");
   const [actionType, setActionType] = useState<
@@ -353,6 +372,39 @@ export default function AdminReviewQueue() {
             </Card>
           ))}
         </div>
+      )}
+
+      {data?.items && data.items.length > 0 && (
+        <Card className="p-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
+            <div>
+              Showing {data?.items?.length || 0} review items {currentPage > 1 && `(Page ${currentPage})`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrevPage}
+                disabled={currentPage <= 1 || isLoading || isFetching}
+                className="h-8 px-3"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                Previous
+              </Button>
+              <span className="font-medium px-2">Page {currentPage}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={!data?.nextCursor || isLoading || isFetching}
+                className="h-8 px-3"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* Shared Action Dialog */}
