@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Publication } from './publication';
+import type { Publication } from "./publication";
 
 export interface PublicationList {
   items: Publication[];

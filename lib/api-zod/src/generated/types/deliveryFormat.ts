@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type DeliveryFormat = typeof DeliveryFormat[keyof typeof DeliveryFormat];
-
+export type DeliveryFormat =
+  (typeof DeliveryFormat)[keyof typeof DeliveryFormat];
 
 export const DeliveryFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;

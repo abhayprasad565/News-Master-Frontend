@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Label } from './label';
+import type { Label } from "./label";
 
 export interface LabelList {
   items: Label[];

@@ -6,12 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type UserSessionRole = typeof UserSessionRole[keyof typeof UserSessionRole];
-
+export type UserSessionRole =
+  (typeof UserSessionRole)[keyof typeof UserSessionRole];
 
 export const UserSessionRole = {
-  owner: 'owner',
-  admin: 'admin',
-  moderator: 'moderator',
-  reader: 'reader',
+  owner: "owner",
+  admin: "admin",
+  moderator: "moderator",
+  reader: "reader",
 } as const;

@@ -5,13 +5,13 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminPostDetailAudioSelectionMode } from './adminPostDetailAudioSelectionMode';
-import type { AdminPostDetailGraphicSourceMode } from './adminPostDetailGraphicSourceMode';
-import type { AdminPostDetailKind } from './adminPostDetailKind';
-import type { AdminPostDetailStatus } from './adminPostDetailStatus';
-import type { Delivery } from './delivery';
-import type { Label } from './label';
-import type { Publication } from './publication';
+import type { AdminPostDetailAudioSelectionMode } from "./adminPostDetailAudioSelectionMode";
+import type { AdminPostDetailGraphicSourceMode } from "./adminPostDetailGraphicSourceMode";
+import type { AdminPostDetailKind } from "./adminPostDetailKind";
+import type { AdminPostDetailStatus } from "./adminPostDetailStatus";
+import type { Delivery } from "./delivery";
+import type { Label } from "./label";
+import type { Publication } from "./publication";
 
 export interface AdminPostDetail {
   id: string;

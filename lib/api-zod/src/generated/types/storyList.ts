@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Story } from './story';
+import type { Story } from "./story";
 
 export interface StoryList {
   items: Story[];

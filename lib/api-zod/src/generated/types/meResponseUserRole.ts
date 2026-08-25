@@ -6,12 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type MeResponseUserRole = typeof MeResponseUserRole[keyof typeof MeResponseUserRole];
-
+export type MeResponseUserRole =
+  (typeof MeResponseUserRole)[keyof typeof MeResponseUserRole];
 
 export const MeResponseUserRole = {
-  owner: 'owner',
-  admin: 'admin',
-  moderator: 'moderator',
-  reader: 'reader',
+  owner: "owner",
+  admin: "admin",
+  moderator: "moderator",
+  reader: "reader",
 } as const;

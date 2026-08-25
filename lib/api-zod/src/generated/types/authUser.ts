@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { UserSession } from './userSession';
+import type { UserSession } from "./userSession";
 
 export interface AuthUser {
   user: UserSession;

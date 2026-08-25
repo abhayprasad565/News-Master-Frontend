@@ -7,20 +7,20 @@
  */
 
 export type GetDeliveriesParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-platform?: string | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  status?: string | null;
+  /**
+   * @nullable
+   */
+  platform?: string | null;
 };

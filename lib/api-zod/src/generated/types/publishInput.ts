@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Destination } from './destination';
+import type { Destination } from "./destination";
 
 export interface PublishInput {
   destinations: Destination[];

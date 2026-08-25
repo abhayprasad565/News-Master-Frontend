@@ -7,24 +7,24 @@
  */
 
 export type GetAdminPostsParams = {
-/**
- * @nullable
- */
-limit?: number | null;
-/**
- * @nullable
- */
-cursor?: string | null;
-/**
- * @nullable
- */
-status?: string | null;
-/**
- * @nullable
- */
-kind?: string | null;
-/**
- * @nullable
- */
-includeArchived?: boolean | null;
+  /**
+   * @nullable
+   */
+  limit?: number | null;
+  /**
+   * @nullable
+   */
+  cursor?: string | null;
+  /**
+   * @nullable
+   */
+  status?: string | null;
+  /**
+   * @nullable
+   */
+  kind?: string | null;
+  /**
+   * @nullable
+   */
+  includeArchived?: boolean | null;
 };

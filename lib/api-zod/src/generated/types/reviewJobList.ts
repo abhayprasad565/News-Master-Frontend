@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ReviewJob } from './reviewJob';
+import type { ReviewJob } from "./reviewJob";
 
 export interface ReviewJobList {
   items: ReviewJob[];

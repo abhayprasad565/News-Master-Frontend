@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type PlatformPostFormat = typeof PlatformPostFormat[keyof typeof PlatformPostFormat];
-
+export type PlatformPostFormat =
+  (typeof PlatformPostFormat)[keyof typeof PlatformPostFormat];
 
 export const PlatformPostFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;

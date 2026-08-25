@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Delivery } from './delivery';
+import type { Delivery } from "./delivery";
 
 export interface DeliveryList {
   items: Delivery[];

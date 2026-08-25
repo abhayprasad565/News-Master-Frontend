@@ -6,14 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdminPostStatus = typeof AdminPostStatus[keyof typeof AdminPostStatus];
-
+export type AdminPostStatus =
+  (typeof AdminPostStatus)[keyof typeof AdminPostStatus];
 
 export const AdminPostStatus = {
-  DRAFT: 'DRAFT',
-  VALIDATING: 'VALIDATING',
-  VALIDATED: 'VALIDATED',
-  MANUAL_REVIEW: 'MANUAL_REVIEW',
-  REJECTED: 'REJECTED',
-  PUBLISHED: 'PUBLISHED',
+  DRAFT: "DRAFT",
+  VALIDATING: "VALIDATING",
+  VALIDATED: "VALIDATED",
+  MANUAL_REVIEW: "MANUAL_REVIEW",
+  REJECTED: "REJECTED",
+  PUBLISHED: "PUBLISHED",
 } as const;

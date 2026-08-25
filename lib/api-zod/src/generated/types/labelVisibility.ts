@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type LabelVisibility = typeof LabelVisibility[keyof typeof LabelVisibility];
-
+export type LabelVisibility =
+  (typeof LabelVisibility)[keyof typeof LabelVisibility];
 
 export const LabelVisibility = {
-  PUBLIC: 'PUBLIC',
-  ADMIN_ONLY: 'ADMIN_ONLY',
+  PUBLIC: "PUBLIC",
+  ADMIN_ONLY: "ADMIN_ONLY",
 } as const;

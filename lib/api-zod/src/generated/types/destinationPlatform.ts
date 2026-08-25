@@ -6,13 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type DestinationPlatform = typeof DestinationPlatform[keyof typeof DestinationPlatform];
-
+export type DestinationPlatform =
+  (typeof DestinationPlatform)[keyof typeof DestinationPlatform];
 
 export const DestinationPlatform = {
-  telegram: 'telegram',
-  instagram: 'instagram',
-  x: 'x',
-  webhook: 'webhook',
-  whatsapp: 'whatsapp',
+  telegram: "telegram",
+  instagram: "instagram",
+  youtube: "youtube",
+  x: "x",
+  webhook: "webhook",
+  whatsapp: "whatsapp",
 } as const;

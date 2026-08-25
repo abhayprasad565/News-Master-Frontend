@@ -11,7 +11,6 @@ import {
 import { format } from "date-fns";
 import {
   ArrowLeft,
-  Edit,
   Trash2,
   Send,
   CheckCircle2,
@@ -22,6 +21,7 @@ import {
   AlertCircle,
   Film,
   Image as ImageIcon,
+  ImageOff,
   Sparkles,
   RefreshCw,
   Loader2,
@@ -77,6 +77,7 @@ type PublishPlanDestination = {
   defaultFormat?: PublishFormat;
   alreadyPublished?: boolean;
   successfulFormats?: PublishFormat[];
+  compatibilityReason?: string;
 };
 
 const destinationKey = (destination: PublishPlanDestination) =>
@@ -92,13 +93,21 @@ const supportedFormatsFor = (
       ? ["IMAGE", "REEL"]
       : ["IMAGE"];
 
+const getDefaultFormat = (
+  destination: PublishPlanDestination,
+): PublishFormat => {
+  if (destination.defaultFormat) return destination.defaultFormat;
+  const formats = supportedFormatsFor(destination);
+  return formats.includes("REEL") ? "REEL" : (formats[0] ?? "REEL");
+};
+
 const isFormatComplete = (
   destination: PublishPlanDestination,
   format: PublishFormat,
 ) =>
   destination.successfulFormats?.includes(format) ||
   (destination.alreadyPublished === true &&
-    format === (destination.defaultFormat ?? "IMAGE"));
+    format === getDefaultFormat(destination));
 
 export default function AdminPostDetail() {
   const { id } = useParams();
@@ -112,6 +121,11 @@ export default function AdminPostDetail() {
     Record<string, PublishFormat>
   >({});
   const [sensitivityOverride, setSensitivityOverride] = useState(false);
+  const [youtubeTitle, setYoutubeTitle] = useState("");
+  const [youtubeDescription, setYoutubeDescription] = useState("");
+  const [youtubePrivacy, setYoutubePrivacy] = useState<
+    "private" | "unlisted" | "public"
+  >("public");
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionTitle, setCorrectionTitle] = useState("");
   const [correctionText, setCorrectionText] = useState("");
@@ -126,7 +140,9 @@ export default function AdminPostDetail() {
       enabled: !!id,
       refetchInterval: (query: any) => {
         const renderState = query.state.data?.render?.state;
-        return renderState === "queued" || renderState === "rendering" ? 2500 : false;
+        return renderState === "queued" || renderState === "rendering"
+          ? 2500
+          : false;
       },
     } as any,
   });
@@ -134,7 +150,8 @@ export default function AdminPostDetail() {
   const targetPostId = detail?.id || id;
   const { data: planData, isLoading: planLoading } = useQuery({
     queryKey: ["publishPlan", targetPostId],
-    queryFn: () => apiFetch<any>(`/api/admin/posts/${targetPostId}/publish-plan`),
+    queryFn: () =>
+      apiFetch<any>(`/api/admin/posts/${targetPostId}/publish-plan`),
     enabled: publishOpen && !!targetPostId,
   });
 
@@ -144,10 +161,7 @@ export default function AdminPostDetail() {
       const nextFormats = Object.fromEntries(
         destinations.map((destination) => {
           const formats = supportedFormatsFor(destination);
-          return [
-            destinationKey(destination),
-            destination.defaultFormat ?? formats[0] ?? "IMAGE",
-          ];
+          return [destinationKey(destination), getDefaultFormat(destination)];
         }),
       );
       setFormatByDestId(nextFormats);
@@ -157,12 +171,19 @@ export default function AdminPostDetail() {
             (destination) =>
               !isFormatComplete(
                 destination,
-                nextFormats[destinationKey(destination)] ?? "IMAGE",
+                nextFormats[destinationKey(destination)] ??
+                  getDefaultFormat(destination),
               ),
           )
           .map(destinationKey),
       );
       setSelectAll(true);
+      if (!youtubeTitle)
+        setYoutubeTitle(
+          String(detail?.title || detail?.text || "").slice(0, 100),
+        );
+      if (!youtubeDescription)
+        setYoutubeDescription(String(detail?.text || "").slice(0, 5000));
     }
     setSensitivityOverride(false);
   }, [planData]);
@@ -185,13 +206,17 @@ export default function AdminPostDetail() {
         `/api/admin/posts/${targetPostId}/approve`,
         {
           method: "POST",
-          body: JSON.stringify({ postId: targetPostId, timestamp: new Date().toISOString() }),
+          body: JSON.stringify({
+            postId: targetPostId,
+            timestamp: new Date().toISOString(),
+          }),
         },
       ),
     onSuccess: () => {
       toast({
         title: "Story Approved & Validated",
-        description: "Status changed to REVIEWED. Media rendering queued in background.",
+        description:
+          "Status changed to REVIEWED. Media rendering queued in background.",
       });
       queryClient.invalidateQueries({
         queryKey: getGetAdminPostQueryKey(id!),
@@ -297,18 +322,25 @@ export default function AdminPostDetail() {
   });
 
   const renderMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (options?: { noSourceImage?: boolean }) =>
       apiFetch<{ success: boolean; message: string }>(
         `/api/admin/posts/${targetPostId}/render`,
         {
           method: "POST",
-          body: JSON.stringify({ postId: targetPostId }),
+          body: JSON.stringify({
+            postId: targetPostId,
+            noSourceImage: options?.noSourceImage ?? false,
+          }),
         },
       ),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
-        title: "Rendering queued",
-        description: "Graphic and video Reel render jobs are running in background.",
+        title: variables?.noSourceImage
+          ? "No-Image Render Queued"
+          : "Rendering Queued",
+        description: variables?.noSourceImage
+          ? "Rendering Reel & Graphic without source image background."
+          : "Graphic and video Reel render jobs are running in background.",
       });
       queryClient.invalidateQueries({
         queryKey: getGetAdminPostQueryKey(id!),
@@ -340,17 +372,12 @@ export default function AdminPostDetail() {
   }
 
   const status = detail.status as string;
-  const isMutable = [
-    "DRAFT",
-    "MANUAL_REVIEW",
-    "REJECTED",
-    "VALIDATED",
-    "REVIEWED",
-  ].includes(status);
   const canArchive = ["VALIDATED", "REVIEWED", "REJECTED"].includes(status);
-  const canPublish = status === "VALIDATED" || status === "REVIEWED";
+  const canPublish =
+    status === "VALIDATED" || status === "REVIEWED" || status === "PUBLISHED";
   const canCorrect = status === "PUBLISHED";
-  const canRestore = Boolean((detail as any).archivedAt) || status === "REJECTED";
+  const canRestore =
+    Boolean((detail as any).archivedAt) || status === "REJECTED";
 
   const handlePublish = () => {
     if (planData?.requiresSensitivityOverride && !sensitivityOverride) {
@@ -370,12 +397,20 @@ export default function AdminPostDetail() {
       .map((destination) => {
         const format =
           formatByDestId[destinationKey(destination)] ??
-          destination.defaultFormat ??
-          "IMAGE";
+          getDefaultFormat(destination);
         return {
           platform: destination.platform as Destination["platform"],
           destination: destination.destination,
           format,
+          ...(destination.platform === "youtube"
+            ? {
+                options: {
+                  title: youtubeTitle.trim(),
+                  description: youtubeDescription.trim(),
+                  privacyStatus: youtubePrivacy,
+                },
+              }
+            : {}),
         };
       });
 
@@ -452,7 +487,8 @@ export default function AdminPostDetail() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Reject this story?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will mark the story as REJECTED and remove it from the active review queue.
+                      This will mark the story as REJECTED and remove it from
+                      the active review queue.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -487,7 +523,8 @@ export default function AdminPostDetail() {
               onClick={() => setCorrectionOpen(true)}
               className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0"
             >
-              <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500 shrink-0" /> Correction
+              <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500 shrink-0" />{" "}
+              Correction
             </Button>
           )}
 
@@ -508,13 +545,16 @@ export default function AdminPostDetail() {
             </Button>
           )}
 
-          {isMutable && (
-            <Button size="sm" variant="outline" asChild className="h-9 min-w-[106px] sm:min-w-[112px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0">
-              <Link href={`/admin/posts/${detail.id}/edit`}>
-                <Edit className="mr-1.5 h-3.5 w-3.5" /> Edit
-              </Link>
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="outline"
+            asChild
+            className="h-9 min-w-[118px] sm:min-w-[126px] px-2.5 sm:px-3 text-xs sm:text-sm font-medium justify-center shrink-0"
+          >
+            <Link href={`/admin/posts/${detail.id}/studio`}>
+              <Film className="mr-1.5 h-3.5 w-3.5" /> Post Studio
+            </Link>
+          </Button>
 
           {canArchive && (
             <AlertDialog>
@@ -531,7 +571,8 @@ export default function AdminPostDetail() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete this post?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will delete "{detail.title || detail.text.slice(0, 80)}". Published posts cannot be deleted.
+                    This will delete "{detail.title || detail.text.slice(0, 80)}
+                    ". Published posts cannot be deleted.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -577,15 +618,14 @@ export default function AdminPostDetail() {
             const headline = firstSentence.replace(/^[#*\s]+/, "").trim();
             if (headline) {
               displayTitle =
-                headline.length > 90
-                  ? `${headline.slice(0, 87)}...`
-                  : headline;
+                headline.length > 90 ? `${headline.slice(0, 87)}...` : headline;
             }
           }
 
           return (
             <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight leading-snug">
-              {displayTitle || `Post #${(detail as any).postNumber || detail.id.slice(0, 8)}`}
+              {displayTitle ||
+                `Post #${(detail as any).postNumber || detail.id.slice(0, 8)}`}
             </h1>
           );
         })()}
@@ -618,16 +658,21 @@ export default function AdminPostDetail() {
           </Badge>
           <Badge variant="secondary">{detail.kind}</Badge>
 
-          {((detail as any).render?.state === "rendering" || renderMutation.isPending) && (
+          {((detail as any).render?.state === "rendering" ||
+            renderMutation.isPending) && (
             <Badge className="bg-amber-500 text-white animate-pulse">
               <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Rendering...
             </Badge>
           )}
-          {(detail as any).render?.state === "queued" && !renderMutation.isPending && (
-            <Badge variant="outline" className="text-amber-600 border-amber-400 bg-amber-50/50 dark:bg-amber-950/30">
-              <Clock className="mr-1 h-3 w-3 animate-spin" /> Render Queued
-            </Badge>
-          )}
+          {(detail as any).render?.state === "queued" &&
+            !renderMutation.isPending && (
+              <Badge
+                variant="outline"
+                className="text-amber-600 border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
+              >
+                <Clock className="mr-1 h-3 w-3 animate-spin" /> Render Queued
+              </Badge>
+            )}
           {(detail as any).render?.state === "failed" && (
             <Badge variant="destructive">
               <AlertCircle className="mr-1 h-3 w-3" /> Render Failed
@@ -652,7 +697,10 @@ export default function AdminPostDetail() {
           <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-sm">Story Rejected</h4>
-            <p className="text-sm mt-1">{detail.validationReason || "This story was rejected by editorial review."}</p>
+            <p className="text-sm mt-1">
+              {detail.validationReason ||
+                "This story was rejected by editorial review."}
+            </p>
           </div>
         </div>
       )}
@@ -687,29 +735,51 @@ export default function AdminPostDetail() {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-primary" /> Media Assets & Rendering
+                  <ImageIcon className="h-4 w-4 text-primary" /> Media Assets &
+                  Rendering
                 </h3>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild className="h-8 text-xs">
-                    <Link href={`/admin/posts/${detail.id}/video`}>
-                      <Film className="mr-1.5 h-3.5 w-3.5" /> Video Studio
-                    </Link>
-                  </Button>
+                <div className="flex items-center gap-2 flex-wrap">
                   {(detail as any).media?.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => renderMutation.mutate()}
-                      disabled={renderMutation.isPending || (detail as any).render?.state === "rendering"}
-                      className="h-8 text-xs"
-                    >
-                      {renderMutation.isPending || (detail as any).render?.state === "rendering" ? (
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                      )}
-                      Re-render
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => renderMutation.mutate({})}
+                        disabled={
+                          renderMutation.isPending ||
+                          (detail as any).render?.state === "rendering"
+                        }
+                        className="h-8 text-xs"
+                      >
+                        {renderMutation.isPending ||
+                        (detail as any).render?.state === "rendering" ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Re-render
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          renderMutation.mutate({ noSourceImage: true })
+                        }
+                        disabled={
+                          renderMutation.isPending ||
+                          (detail as any).render?.state === "rendering"
+                        }
+                        className="h-8 text-xs border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                      >
+                        {renderMutation.isPending ||
+                        (detail as any).render?.state === "rendering" ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ImageOff className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+                        )}
+                        Render Without Image
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -720,7 +790,8 @@ export default function AdminPostDetail() {
                   <div>
                     <p className="font-semibold">Rendering Failed</p>
                     <p className="font-mono mt-0.5 text-[11px] break-all">
-                      {(detail as any).render?.job?.lastFailureReason || "Unknown failure occurred during asset rendering."}
+                      {(detail as any).render?.job?.lastFailureReason ||
+                        "Unknown failure occurred during asset rendering."}
                     </p>
                   </div>
                 </div>
@@ -730,9 +801,12 @@ export default function AdminPostDetail() {
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
                   <Clock className="h-4 w-4 shrink-0 mt-0.5 animate-spin" />
                   <div>
-                    <p className="font-semibold">Render Job Queued in Background</p>
+                    <p className="font-semibold">
+                      Render Job Queued in Background
+                    </p>
                     <p className="mt-0.5 text-muted-foreground">
-                      Rendering 4:5 graphic card and 9:16 video Reel. This page will automatically update when ready.
+                      Rendering 4:5 graphic card and 9:16 video Reel. This page
+                      will automatically update when ready.
                     </p>
                   </div>
                 </div>
@@ -744,7 +818,8 @@ export default function AdminPostDetail() {
                   <div>
                     <p className="font-semibold">Rendering in Progress...</p>
                     <p className="mt-0.5 text-muted-foreground">
-                      Generating high-resolution graphic card and video Reel. Updating automatically...
+                      Generating high-resolution graphic card and video Reel.
+                      Updating automatically...
                     </p>
                   </div>
                 </div>
@@ -752,37 +827,42 @@ export default function AdminPostDetail() {
 
               {(detail as any).media && (detail as any).media.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {(detail as any).media.map((mediaItem: any, idx: number) => (
-                    <div
-                      key={mediaItem.id || idx}
-                      className="rounded-lg overflow-hidden border bg-muted/30 aspect-[4/3] relative group shadow-sm"
-                    >
-                      {mediaItem.type === "REEL" ? (
-                        <video
-                          src={mediaItem.url}
-                          controls
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <a
-                          href={mediaItem.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full h-full"
-                        >
-                          <img
+                  {(detail as any).media
+                    .filter(
+                      (mediaItem: any) =>
+                        !mediaItem.assetType?.includes("POSTER"),
+                    )
+                    .map((mediaItem: any, idx: number) => (
+                      <div
+                        key={mediaItem.id || idx}
+                        className="rounded-lg overflow-hidden border bg-muted/30 aspect-[4/3] relative group shadow-sm"
+                      >
+                        {mediaItem.mimeType === "video/mp4" ? (
+                          <video
                             src={mediaItem.url}
-                            alt="Rendered graphic"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
+                            controls
+                            className="w-full h-full object-cover"
                           />
-                        </a>
-                      )}
-                      <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
-                        {mediaItem.type}
+                        ) : (
+                          <a
+                            href={mediaItem.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full h-full"
+                          >
+                            <img
+                              src={mediaItem.url}
+                              alt="Rendered graphic"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </a>
+                        )}
+                        <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded">
+                          {mediaItem.type}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed p-6 text-center bg-muted/20 space-y-3">
@@ -790,26 +870,49 @@ export default function AdminPostDetail() {
                     <ImageIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium">No Rendered Assets Yet</h4>
+                    <h4 className="text-sm font-medium">
+                      No Rendered Assets Yet
+                    </h4>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                       {(detail as any).sourceImageKey
                         ? "Custom background image is saved. Click below to render 4:5 graphic cards and 9:16 video Reels."
                         : "Post content is ready. Click below to generate official graphics and video assets."}
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => renderMutation.mutate()}
-                    disabled={renderMutation.isPending || (detail as any).render?.state === "rendering"}
-                    className="bg-primary text-primary-foreground"
-                  >
-                    {renderMutation.isPending || (detail as any).render?.state === "rendering" ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-2 h-4 w-4" />
-                    )}
-                    Render Graphic & Video Now
-                  </Button>
+                  <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+                    <Button
+                      size="sm"
+                      onClick={() => renderMutation.mutate({})}
+                      disabled={
+                        renderMutation.isPending ||
+                        (detail as any).render?.state === "rendering"
+                      }
+                      className="bg-primary text-primary-foreground"
+                    >
+                      {renderMutation.isPending ||
+                      (detail as any).render?.state === "rendering" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
+                      Render Graphic & Video
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        renderMutation.mutate({ noSourceImage: true })
+                      }
+                      disabled={
+                        renderMutation.isPending ||
+                        (detail as any).render?.state === "rendering"
+                      }
+                      className="border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                    >
+                      <ImageOff className="mr-2 h-4 w-4 text-amber-500" />
+                      Render Without Source Image
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -824,11 +927,18 @@ export default function AdminPostDetail() {
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between py-1 border-b items-center">
                 <span className="text-muted-foreground">Post #</span>
-                <span className="font-mono font-bold text-primary">#{(detail as any).postNumber || '—'}</span>
+                <span className="font-mono font-bold text-primary">
+                  #{(detail as any).postNumber || "—"}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">UUID</span>
-                <span className="font-mono text-xs text-muted-foreground" title={detail.id}>{detail.id.slice(0, 8)}...</span>
+                <span
+                  className="font-mono text-xs text-muted-foreground"
+                  title={detail.id}
+                >
+                  {detail.id.slice(0, 8)}...
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b">
                 <span className="text-muted-foreground">Created</span>
@@ -923,8 +1033,7 @@ export default function AdminPostDetail() {
                             !isFormatComplete(
                               destination,
                               formatByDestId[destinationKey(destination)] ??
-                                destination.defaultFormat ??
-                                "IMAGE",
+                                getDefaultFormat(destination),
                             ),
                         )
                         .map(destinationKey),
@@ -948,8 +1057,7 @@ export default function AdminPostDetail() {
                               !isFormatComplete(
                                 destination,
                                 formatByDestId[destinationKey(destination)] ??
-                                  destination.defaultFormat ??
-                                  "IMAGE",
+                                  getDefaultFormat(destination),
                               ),
                           )
                           .map(destinationKey),
@@ -983,10 +1091,7 @@ export default function AdminPostDetail() {
                       const key = destinationKey(dest);
                       const formats = supportedFormatsFor(dest);
                       const selectedFormat =
-                        formatByDestId[key] ??
-                        dest.defaultFormat ??
-                        formats[0] ??
-                        "IMAGE";
+                        formatByDestId[key] ?? getDefaultFormat(dest);
                       const complete = isFormatComplete(dest, selectedFormat);
                       const allFormatsComplete = formats.every((format) =>
                         isFormatComplete(dest, format),
@@ -1015,9 +1120,7 @@ export default function AdminPostDetail() {
                                     destination,
                                     formatByDestId[
                                       destinationKey(destination)
-                                    ] ??
-                                      destination.defaultFormat ??
-                                      "IMAGE",
+                                    ] ?? getDefaultFormat(destination),
                                   ),
                               ).length;
                               if (next.length === selectableCount)
@@ -1025,17 +1128,18 @@ export default function AdminPostDetail() {
                             }
                           }}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center space-x-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                            <div className="flex items-start sm:items-center space-x-3">
                               <Checkbox
                                 checked={complete || isChecked}
                                 disabled={allFormatsComplete}
+                                className="mt-0.5 sm:mt-0"
                               />
                               <div>
-                                <div className="font-semibold text-foreground">
+                                <div className="font-semibold text-foreground text-xs sm:text-sm">
                                   {dest.label ?? dest.destination}
                                 </div>
-                                <div className="text-xs text-muted-foreground font-mono">
+                                <div className="text-[11px] sm:text-xs text-muted-foreground font-mono truncate max-w-[200px] sm:max-w-none">
                                   {dest.platform}: {dest.destination}
                                 </div>
                               </div>
@@ -1068,6 +1172,78 @@ export default function AdminPostDetail() {
                               </Badge>
                             </div>
                           </div>
+                          {dest.compatibilityReason && (
+                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                              {dest.compatibilityReason}
+                            </p>
+                          )}
+                          {dest.platform === "youtube" && isChecked && (
+                            <div
+                              className="space-y-3 border-t pt-3"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <div className="space-y-1">
+                                <Label htmlFor={`youtube-title-${key}`}>
+                                  Short title
+                                </Label>
+                                <Input
+                                  id={`youtube-title-${key}`}
+                                  value={youtubeTitle}
+                                  maxLength={100}
+                                  onChange={(event) =>
+                                    setYoutubeTitle(event.target.value)
+                                  }
+                                />
+                                <p className="text-[11px] text-muted-foreground text-right">
+                                  {youtubeTitle.length}/100
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <Label htmlFor={`youtube-description-${key}`}>
+                                  Description
+                                </Label>
+                                <Textarea
+                                  id={`youtube-description-${key}`}
+                                  value={youtubeDescription}
+                                  maxLength={5000}
+                                  rows={4}
+                                  onChange={(event) =>
+                                    setYoutubeDescription(event.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label>Privacy</Label>
+                                <Select
+                                  value={youtubePrivacy}
+                                  onValueChange={(value) =>
+                                    setYoutubePrivacy(
+                                      value as typeof youtubePrivacy,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="private">
+                                      Private
+                                    </SelectItem>
+                                    <SelectItem value="unlisted">
+                                      Unlisted
+                                    </SelectItem>
+                                    <SelectItem value="public">
+                                      Public
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <p className="text-[11px] text-muted-foreground">
+                                  The server enforces private until the
+                                  compliance audit gate is approved.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <div
                             className="flex items-center gap-2 pl-7"
                             onClick={(event) => event.stopPropagation()}

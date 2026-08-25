@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type DestinationFormat = typeof DestinationFormat[keyof typeof DestinationFormat];
-
+export type DestinationFormat =
+  (typeof DestinationFormat)[keyof typeof DestinationFormat];
 
 export const DestinationFormat = {
-  IMAGE: 'IMAGE',
-  REEL: 'REEL',
+  IMAGE: "IMAGE",
+  REEL: "REEL",
 } as const;

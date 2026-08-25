@@ -19,12 +19,12 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
   const isContactActive = location === '/contact';
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background w-full overflow-x-hidden">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-[100dvh] flex flex-col bg-background w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-xs">
         {/* Main Header Bar: Logo on left, Theme & Auth on right */}
         <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 max-w-5xl mx-auto w-full">
           <div className="flex items-center gap-4 sm:gap-6">
-            <Link href={role ? destinationForRole(role) : '/stories'} className="flex items-center gap-2">
+            <Link href={role ? destinationForRole(role) : '/stories'} className="flex items-center gap-2" aria-label="ScrollBrief Home">
               <Logo className="h-7 sm:h-8 w-auto" />
             </Link>
             
@@ -123,7 +123,7 @@ export function ReaderLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 w-full min-w-0 max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      <main className="flex-1 w-full min-w-0 max-w-5xl mx-auto px-3 sm:px-6 pt-[96px] sm:pt-[84px] pb-6 sm:pb-10">
         {children}
       </main>
 

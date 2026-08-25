@@ -5,10 +5,10 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { Label } from './label';
-import type { PlatformLink } from './platformLink';
-import type { StoryKind } from './storyKind';
-import type { StoryMedia } from './storyMedia';
+import type { Label } from "./label";
+import type { PlatformLink } from "./platformLink";
+import type { StoryKind } from "./storyKind";
+import type { StoryMedia } from "./storyMedia";
 
 export interface Story {
   id: string;

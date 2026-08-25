@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,8 +10,15 @@ import {
   getGetAdminPostsQueryKey,
   getGetAdminPostQueryKey,
 } from "@workspace/api-client-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Save, Music2, ExternalLink } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Loader2,
+  Save,
+  Music2,
+  ExternalLink,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -42,6 +49,7 @@ import { apiFetch } from "@/lib/api";
 type AudioEnergyLevel = "CALM" | "NEUTRAL" | "UPBEAT";
 type AudioTrack = {
   id: string;
+  title: string | null;
   storageKey: string;
   theme: string;
   durationSeconds: number;
@@ -56,6 +64,11 @@ type PostAudioExtension = {
 
 const mediaUrl = (storageKey: string) =>
   `/media/${storageKey.split("/").map(encodeURIComponent).join("/")}`;
+
+const trackName = (track: AudioTrack) =>
+  track.title?.trim() ||
+  track.storageKey.split("/").at(-1) ||
+  track.id.slice(0, 8);
 
 const formSchema = z.object({
   title: z.string().optional(),
@@ -77,6 +90,14 @@ export default function AdminEditPost() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [audioUploadFile, setAudioUploadFile] = useState<File | null>(null);
+  const [audioUploadTheme, setAudioUploadTheme] = useState("general");
+  const [audioUploadEnergy, setAudioUploadEnergy] =
+    useState<AudioEnergyLevel>("NEUTRAL");
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState("");
+  const [audioSourceDuration, setAudioSourceDuration] = useState(0);
+  const [audioTrimStart, setAudioTrimStart] = useState(0);
+  const [audioTrimEnd, setAudioTrimEnd] = useState(0);
 
   const {
     data: post,
@@ -109,6 +130,60 @@ export default function AdminEditPost() {
     queryFn: () => apiFetch<{ items: AudioTrack[] }>("/api/admin/audio-tracks"),
   });
   const audioTracks = audioData?.items ?? [];
+
+  useEffect(() => {
+    if (!audioUploadFile) {
+      setAudioPreviewUrl("");
+      setAudioSourceDuration(0);
+      setAudioTrimStart(0);
+      setAudioTrimEnd(0);
+      return;
+    }
+    const url = URL.createObjectURL(audioUploadFile);
+    setAudioPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [audioUploadFile]);
+
+  const uploadAudioMutation = useMutation({
+    mutationFn: () => {
+      if (!audioUploadFile) throw new Error("Choose an audio file first");
+      const payload = new FormData();
+      payload.set("file", audioUploadFile);
+      payload.set("theme", audioUploadTheme);
+      payload.set("energyLevel", audioUploadEnergy);
+      payload.set("sensitiveSafe", "true");
+      payload.set("youtubeEligible", "false");
+      payload.set("tagSlugs", "[]");
+      payload.set("trimStartSeconds", String(audioTrimStart));
+      payload.set("trimEndSeconds", String(audioTrimEnd));
+      return apiFetch<AudioTrack>("/api/admin/audio-tracks", {
+        method: "POST",
+        body: payload,
+      });
+    },
+    onSuccess: (track) => {
+      queryClient.setQueryData<{ items: AudioTrack[] }>(
+        ["audioTracks"],
+        (current) => ({
+          items: [
+            track,
+            ...(current?.items ?? []).filter((item) => item.id !== track.id),
+          ],
+        }),
+      );
+      form.setValue("audioSelectionMode", "MANUAL", { shouldDirty: true });
+      form.setValue("audioTrackId", track.id, { shouldDirty: true });
+      form.setValue("audioStartSeconds", 0, { shouldDirty: true });
+      setAudioUploadFile(null);
+      toast({ title: "Song uploaded and selected" });
+    },
+    onError: (uploadError) =>
+      toast({
+        title: "Audio upload failed",
+        description: String(uploadError),
+        variant: "destructive",
+      }),
+  });
 
   // Init form
   useEffect(() => {
@@ -235,13 +310,19 @@ export default function AdminEditPost() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight flex items-center gap-2 flex-wrap">
-            Edit Post <span className="text-primary font-mono font-normal text-xl sm:text-2xl">#{(post as any).postNumber || post.id.slice(0, 8)}</span>
+            Edit Post{" "}
+            <span className="text-primary font-mono font-normal text-xl sm:text-2xl">
+              #{(post as any).postNumber || post.id.slice(0, 8)}
+            </span>
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Make changes to this {post.kind.toLowerCase()} post.
           </p>
         </div>
-        <Badge variant="outline" className="text-sm px-3 py-1 self-start sm:self-auto">
+        <Badge
+          variant="outline"
+          className="text-sm px-3 py-1 self-start sm:self-auto"
+        >
           {post.status}
         </Badge>
       </div>
@@ -455,7 +536,8 @@ export default function AdminEditPost() {
                             </SelectItem>
                             {audioTracks.map((track) => (
                               <SelectItem key={track.id} value={track.id}>
-                                {track.theme} · {track.energyLevel} ·{" "}
+                                {trackName(track)} · {track.theme} ·{" "}
+                                {track.energyLevel} ·{" "}
                                 {Math.round(track.durationSeconds)}s
                               </SelectItem>
                             ))}
@@ -497,6 +579,108 @@ export default function AdminEditPost() {
                       />
                     </div>
                   )}
+
+                <div className="space-y-4 rounded-md border bg-background p-4">
+                  <div>
+                    <Label className="font-semibold">Upload a new song</Label>
+                    <p className="text-xs text-muted-foreground">
+                      The uploaded track is added to the library and selected
+                      for this Reel.
+                    </p>
+                  </div>
+                  <Input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(event) =>
+                      setAudioUploadFile(event.currentTarget.files?.[0] ?? null)
+                    }
+                  />
+                  {audioPreviewUrl && (
+                    <audio
+                      src={audioPreviewUrl}
+                      controls
+                      className="w-full"
+                      onLoadedMetadata={(event) => {
+                        const duration = event.currentTarget.duration;
+                        if (!Number.isFinite(duration)) return;
+                        const rounded = Math.floor(duration * 100) / 100;
+                        setAudioSourceDuration(rounded);
+                        setAudioTrimEnd(rounded);
+                      }}
+                    />
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Theme</Label>
+                      <Input
+                        value={audioUploadTheme}
+                        onChange={(event) =>
+                          setAudioUploadTheme(event.currentTarget.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Energy</Label>
+                      <Select
+                        value={audioUploadEnergy}
+                        onValueChange={(value) =>
+                          setAudioUploadEnergy(value as AudioEnergyLevel)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CALM">Calm</SelectItem>
+                          <SelectItem value="NEUTRAL">Neutral</SelectItem>
+                          <SelectItem value="UPBEAT">Upbeat</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Trim start (seconds)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={Math.max(0, audioTrimEnd - 0.1)}
+                        step={0.1}
+                        value={audioTrimStart}
+                        onChange={(event) =>
+                          setAudioTrimStart(Number(event.currentTarget.value))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Trim end (seconds)</Label>
+                      <Input
+                        type="number"
+                        min={audioTrimStart + 0.1}
+                        max={audioSourceDuration}
+                        step={0.1}
+                        value={audioTrimEnd}
+                        onChange={(event) =>
+                          setAudioTrimEnd(Number(event.currentTarget.value))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      uploadAudioMutation.isPending ||
+                      !audioUploadFile ||
+                      audioSourceDuration <= 0 ||
+                      audioTrimEnd <= audioTrimStart
+                    }
+                    onClick={() => uploadAudioMutation.mutate()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {uploadAudioMutation.isPending
+                      ? "Uploading..."
+                      : "Upload and select"}
+                  </Button>
+                </div>
 
                 <div className="grid gap-5 md:grid-cols-3">
                   <FormField

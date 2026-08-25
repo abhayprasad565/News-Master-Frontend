@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { TopicOverrideInputMode } from './topicOverrideInputMode';
+import type { TopicOverrideInputMode } from "./topicOverrideInputMode";
 
 export interface TopicOverrideInput {
   version: number;

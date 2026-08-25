@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "wouter";
+import { apiFetch } from "@/lib/api";
 
 /**
  * Tracks reader page navigations and qualified visible story reads.
@@ -25,26 +26,13 @@ export function usePageTracking() {
     }
     lastRecordedPath.current = location;
 
-    const payload = JSON.stringify({
-      path: location,
-      referrer: document.referrer ? document.referrer.slice(0, 500) : "",
-    });
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: "application/json" });
-        navigator.sendBeacon("/api/analytics/visit", blob);
-      } else {
-        fetch("/api/analytics/visit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // Non-blocking best-effort analytics
-    }
+    apiFetch("/api/analytics/visit", {
+      method: "POST",
+      body: JSON.stringify({
+        path: location,
+        referrer: document.referrer ? document.referrer.slice(0, 500) : "",
+      }),
+    }).catch(() => {});
   }, [location]);
 
   // 2. Qualified Story View with Page Visibility API + 3s active dwell timer
@@ -68,11 +56,9 @@ export function usePageTracking() {
       if (viewRecorded) return;
       viewRecorded = true;
 
-      fetch(`/api/stories/${encodeURIComponent(storyParam)}/view`, {
+      apiFetch(`/api/stories/${encodeURIComponent(storyParam)}/view`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
-        keepalive: true,
       }).catch(() => {});
     };
 

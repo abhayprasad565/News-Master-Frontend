@@ -2,7 +2,13 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { ReaderLayout } from "@/components/layout/ReaderLayout";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Route, Switch, Router as WouterRouter, Redirect } from "wouter";
+import {
+  Route,
+  Switch,
+  Router as WouterRouter,
+  Redirect,
+  useParams,
+} from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,6 +39,7 @@ import AdminDeliveryList from "@/pages/admin/delivery-list";
 import AdminDeliveryDetail from "@/pages/admin/delivery-detail";
 import AdminLabelList from "@/pages/admin/label-list";
 import AdminInstagram from "@/pages/admin/instagram";
+import AdminIntegrations from "@/pages/admin/integrations";
 import AdminX from "@/pages/admin/x";
 import AdminPlatformPostDetail from "@/pages/admin/platform-post-detail";
 import AdminSettings from "@/pages/admin/settings";
@@ -44,6 +51,7 @@ import AdminUrgent from "@/pages/admin/urgent";
 import AdminAutopilot from "@/pages/admin/autopilot";
 import AdminAudioLibrary from "@/pages/admin/audio-library";
 import AdminPostVideo from "@/pages/admin/post-video";
+import AdminPostStudio from "@/pages/admin/post-studio";
 import AdminTraffic from "@/pages/admin/traffic";
 import { usePageTracking } from "@/hooks/use-page-tracking";
 
@@ -69,6 +77,32 @@ function PageTracker() {
   return null;
 }
 
+const postStudioEnabled = import.meta.env.VITE_FEATURE_POST_STUDIO !== "false";
+function LegacyPostEditRoute() {
+  const { id = "" } = useParams();
+  return postStudioEnabled ? (
+    <Redirect to={`/admin/posts/${id}/studio?tab=story`} />
+  ) : (
+    <AdminEditPost />
+  );
+}
+function LegacyPostVideoRoute() {
+  const { id = "" } = useParams();
+  return postStudioEnabled ? (
+    <Redirect to={`/admin/posts/${id}/studio?tab=reel`} />
+  ) : (
+    <AdminPostVideo />
+  );
+}
+function PostStudioRoute() {
+  const { id = "" } = useParams();
+  return postStudioEnabled ? (
+    <AdminPostStudio />
+  ) : (
+    <Redirect to={`/admin/posts/${id}/video`} />
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -77,7 +111,10 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <PageTracker />
             <Switch>
-              <Route path="/marriage-invitation" component={MarriageInvitation} />
+              <Route
+                path="/marriage-invitation"
+                component={MarriageInvitation}
+              />
               <Route path="/login" component={Login} />
               <Route path="/admin/login" component={LegacyAdminLoginRedirect} />
               <Route path="/register" component={Register} />
@@ -189,14 +226,21 @@ function App() {
               <Route path="/admin/posts/:id/edit">
                 <ProtectedRoute requireRole="admin">
                   <AdminLayout>
-                    <AdminEditPost />
+                    <LegacyPostEditRoute />
                   </AdminLayout>
                 </ProtectedRoute>
               </Route>
               <Route path="/admin/posts/:id/video">
                 <ProtectedRoute requireRole="admin">
                   <AdminLayout>
-                    <AdminPostVideo />
+                    <LegacyPostVideoRoute />
+                  </AdminLayout>
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/posts/:id/studio">
+                <ProtectedRoute requireRole="admin">
+                  <AdminLayout>
+                    <PostStudioRoute />
                   </AdminLayout>
                 </ProtectedRoute>
               </Route>
@@ -260,6 +304,13 @@ function App() {
                 <ProtectedRoute requireRole="admin">
                   <AdminLayout>
                     <AdminX />
+                  </AdminLayout>
+                </ProtectedRoute>
+              </Route>
+              <Route path="/admin/integrations">
+                <ProtectedRoute requireRole="admin">
+                  <AdminLayout>
+                    <AdminIntegrations />
                   </AdminLayout>
                 </ProtectedRoute>
               </Route>

@@ -9,11 +9,11 @@
 /**
  * @nullable
  */
-export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType] | null;
-
+export type StoryMediaType =
+  (typeof StoryMediaType)[keyof typeof StoryMediaType] | null;
 
 export const StoryMediaType = {
-  GRAPHIC: 'GRAPHIC',
-  TEXT_ONLY: 'TEXT_ONLY',
-  REEL: 'REEL',
+  GRAPHIC: "GRAPHIC",
+  TEXT_ONLY: "TEXT_ONLY",
+  REEL: "REEL",
 } as const;

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ReconcileInputOutcome = typeof ReconcileInputOutcome[keyof typeof ReconcileInputOutcome];
-
+export type ReconcileInputOutcome =
+  (typeof ReconcileInputOutcome)[keyof typeof ReconcileInputOutcome];
 
 export const ReconcileInputOutcome = {
-  SENT: 'SENT',
-  NOT_SENT: 'NOT_SENT',
-  FAILED: 'FAILED',
+  SENT: "SENT",
+  NOT_SENT: "NOT_SENT",
+  FAILED: "FAILED",
 } as const;

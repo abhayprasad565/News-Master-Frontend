@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { LabelUpdateVisibility } from './labelUpdateVisibility';
+import type { LabelUpdateVisibility } from "./labelUpdateVisibility";
 
 export interface LabelUpdate {
   /** @nullable */

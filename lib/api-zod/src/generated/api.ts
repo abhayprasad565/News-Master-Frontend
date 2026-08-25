@@ -5,1096 +5,1753 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import * as zod from 'zod';
+import * as zod from "zod";
 
+export const ConnectYouTubeResponse = zod.object({
+  authorizationUrl: zod.string(),
+});
+
+export const CompleteYouTubeConnectionQueryParams = zod.object({
+  code: zod.coerce.string(),
+  state: zod.coerce.string(),
+});
+
+export const CompleteYouTubeConnectionResponse = zod.unknown();
+
+export const GetYouTubeIntegrationStatusResponse = zod.object({
+  enabled: zod.boolean(),
+  configured: zod.boolean(),
+  publicUploadsApproved: zod.boolean(),
+  connection: zod.union([
+    zod.null(),
+    zod.object({
+      id: zod.string(),
+      channelId: zod.string(),
+      channelName: zod.string(),
+      status: zod.enum(["ACTIVE"]),
+      connectedAt: zod.string(),
+    }),
+  ]),
+});
+
+export const DisconnectYouTubeResponse = zod.unknown();
 
 /**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string(),
-  "role": zod.string().nullish(),
-  "dependencies": zod.object({
-  "database": zod.string().nullish()
-}).optional()
-})
-
+  status: zod.string(),
+  role: zod.string().nullish(),
+  dependencies: zod
+    .object({
+      database: zod.string().nullish(),
+    })
+    .optional(),
+});
 
 /**
  * @summary Log in with email and password
  */
 export const LoginBody = zod.object({
-  "email": zod.string(),
-  "password": zod.string()
-})
+  email: zod.string(),
+  password: zod.string(),
+});
 
 export const LoginResponse = zod.object({
-  "user": zod.object({
-  "email": zod.string(),
-  "role": zod.enum(['owner', 'admin', 'moderator', 'reader'])
-})
-})
-
+  user: zod.object({
+    email: zod.string(),
+    role: zod.enum(["owner", "admin", "moderator", "reader"]),
+  }),
+});
 
 /**
  * @summary Log out
  */
 export const LogoutResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Get current session user
  */
 export const GetMeResponse = zod.object({
-  "user": zod.object({
-  "email": zod.string().optional(),
-  "role": zod.enum(['owner', 'admin', 'moderator', 'reader']).optional()
-}).nullable()
-})
-
+  user: zod
+    .object({
+      email: zod.string().optional(),
+      role: zod.enum(["owner", "admin", "moderator", "reader"]).optional(),
+    })
+    .nullable(),
+});
 
 /**
  * @summary Get Prometheus metrics
  */
 export const GetMetricsResponse = zod.object({
-  "prometheus": zod.string()
-})
-
+  prometheus: zod.string(),
+});
 
 /**
  * @summary List published stories
  */
 export const GetStoriesQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish(),
-  "label": zod.coerce.string().nullish(),
-  "q": zod.coerce.string().nullish(),
-  "platform": zod.coerce.string().nullish(),
-  "from": zod.coerce.string().nullish(),
-  "to": zod.coerce.string().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+  label: zod.coerce.string().nullish(),
+  q: zod.coerce.string().nullish(),
+  platform: zod.coerce.string().nullish(),
+  from: zod.coerce.string().nullish(),
+  to: zod.coerce.string().nullish(),
+});
 
 export const getStoriesResponseItemsItemLikeCountMin = 0;
 
 export const getStoriesResponseItemsItemCommentCountMin = 0;
 
-
-
 export const GetStoriesResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "publishedAt": zod.string().nullish(),
-  "media": zod.array(zod.object({
-  "url": zod.string(),
-  "type": zod.union([zod.literal('GRAPHIC'),zod.literal('TEXT_ONLY'),zod.literal('REEL'),zod.literal(null)]).nullish(),
-  "mimeType": zod.string().nullish()
-})),
-  "platformLinks": zod.array(zod.object({
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "remoteId": zod.string().nullish()
-})),
-  "correctionOfPostId": zod.string().nullish(),
-  "likeCount": zod.number().min(getStoriesResponseItemsItemLikeCountMin),
-  "commentCount": zod.number().min(getStoriesResponseItemsItemCommentCountMin),
-  "likedByMe": zod.boolean(),
-  "savedByMe": zod.boolean()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      publishedAt: zod.string().nullish(),
+      media: zod.array(
+        zod.object({
+          url: zod.string(),
+          type: zod
+            .union([
+              zod.literal("GRAPHIC"),
+              zod.literal("TEXT_ONLY"),
+              zod.literal("REEL"),
+              zod.literal(null),
+            ])
+            .nullish(),
+          mimeType: zod.string().nullish(),
+        }),
+      ),
+      platformLinks: zod.array(
+        zod.object({
+          platform: zod.string(),
+          destination: zod.string().nullish(),
+          remoteId: zod.string().nullish(),
+        }),
+      ),
+      correctionOfPostId: zod.string().nullish(),
+      likeCount: zod.number().min(getStoriesResponseItemsItemLikeCountMin),
+      commentCount: zod
+        .number()
+        .min(getStoriesResponseItemsItemCommentCountMin),
+      likedByMe: zod.boolean(),
+      savedByMe: zod.boolean(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Get a single published story
  */
 export const GetStoryParams = zod.object({
-  "storyId": zod.coerce.string()
-})
+  storyId: zod.coerce.string(),
+});
 
 export const getStoryResponseLikeCountMin = 0;
 
 export const getStoryResponseCommentCountMin = 0;
 
-
-
 export const GetStoryResponse = zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "publishedAt": zod.string().nullish(),
-  "media": zod.array(zod.object({
-  "url": zod.string(),
-  "type": zod.union([zod.literal('GRAPHIC'),zod.literal('TEXT_ONLY'),zod.literal('REEL'),zod.literal(null)]).nullish(),
-  "mimeType": zod.string().nullish()
-})),
-  "platformLinks": zod.array(zod.object({
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "remoteId": zod.string().nullish()
-})),
-  "correctionOfPostId": zod.string().nullish(),
-  "likeCount": zod.number().min(getStoryResponseLikeCountMin),
-  "commentCount": zod.number().min(getStoryResponseCommentCountMin),
-  "likedByMe": zod.boolean(),
-  "savedByMe": zod.boolean()
-})
-
+  id: zod.string(),
+  eventId: zod.string().nullish(),
+  kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labels: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  publishedAt: zod.string().nullish(),
+  media: zod.array(
+    zod.object({
+      url: zod.string(),
+      type: zod
+        .union([
+          zod.literal("GRAPHIC"),
+          zod.literal("TEXT_ONLY"),
+          zod.literal("REEL"),
+          zod.literal(null),
+        ])
+        .nullish(),
+      mimeType: zod.string().nullish(),
+    }),
+  ),
+  platformLinks: zod.array(
+    zod.object({
+      platform: zod.string(),
+      destination: zod.string().nullish(),
+      remoteId: zod.string().nullish(),
+    }),
+  ),
+  correctionOfPostId: zod.string().nullish(),
+  likeCount: zod.number().min(getStoryResponseLikeCountMin),
+  commentCount: zod.number().min(getStoryResponseCommentCountMin),
+  likedByMe: zod.boolean(),
+  savedByMe: zod.boolean(),
+});
 
 /**
  * @summary List public labels
  */
 export const GetPublicLabelsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-}))
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+});
 
 /**
  * @summary List all labels (admin)
  */
 export const GetAdminLabelsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-}))
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+});
 
 /**
  * @summary Create a label
  */
 export const CreateLabelBody = zod.object({
-  "name": zod.string(),
-  "slug": zod.string().nullish(),
-  "description": zod.string().nullish(),
-  "color": zod.string().nullish(),
-  "visibility": zod.union([zod.literal('PUBLIC'),zod.literal('ADMIN_ONLY'),zod.literal(null)]).nullish()
-})
+  name: zod.string(),
+  slug: zod.string().nullish(),
+  description: zod.string().nullish(),
+  color: zod.string().nullish(),
+  visibility: zod
+    .union([
+      zod.literal("PUBLIC"),
+      zod.literal("ADMIN_ONLY"),
+      zod.literal(null),
+    ])
+    .nullish(),
+});
 
 export const CreateLabelResponse = zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})
-
+  id: zod.string(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullish(),
+  color: zod.string(),
+  visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+  archivedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
 
 /**
  * @summary Update a label
  */
 export const UpdateLabelParams = zod.object({
-  "labelId": zod.coerce.string()
-})
+  labelId: zod.coerce.string(),
+});
 
 export const UpdateLabelBody = zod.object({
-  "name": zod.string().nullish(),
-  "slug": zod.string().nullish(),
-  "description": zod.string().nullish(),
-  "color": zod.string().nullish(),
-  "visibility": zod.union([zod.literal('PUBLIC'),zod.literal('ADMIN_ONLY'),zod.literal(null)]).nullish()
-})
+  name: zod.string().nullish(),
+  slug: zod.string().nullish(),
+  description: zod.string().nullish(),
+  color: zod.string().nullish(),
+  visibility: zod
+    .union([
+      zod.literal("PUBLIC"),
+      zod.literal("ADMIN_ONLY"),
+      zod.literal(null),
+    ])
+    .nullish(),
+});
 
 export const UpdateLabelResponse = zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})
-
+  id: zod.string(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullish(),
+  color: zod.string(),
+  visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+  archivedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
 
 /**
  * @summary Archive a label
  */
 export const DeleteLabelParams = zod.object({
-  "labelId": zod.coerce.string()
-})
+  labelId: zod.coerce.string(),
+});
 
 export const DeleteLabelResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary List posts (admin)
  */
 export const GetAdminPostsQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish(),
-  "status": zod.coerce.string().nullish(),
-  "kind": zod.coerce.string().nullish(),
-  "includeArchived": zod.coerce.boolean().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+  status: zod.coerce.string().nullish(),
+  kind: zod.coerce.string().nullish(),
+  includeArchived: zod.coerce.boolean().nullish(),
+});
 
 export const GetAdminPostsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      status: zod.enum([
+        "DRAFT",
+        "VALIDATING",
+        "VALIDATED",
+        "MANUAL_REVIEW",
+        "REJECTED",
+        "PUBLISHED",
+      ]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      validationReason: zod.string().nullish(),
+      correctionOfPostId: zod.string().nullish(),
+      replacementFactIds: zod.array(zod.string()).nullish(),
+      createdBy: zod.string().nullish(),
+      updatedBy: zod.string().nullish(),
+      createdAt: zod.string(),
+      publishedAt: zod.string().nullish(),
+      archivedAt: zod.string().nullish(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Create a custom post in DRAFT
  */
 export const createPostBodyImageBase64Max = 10485760;
 
-
-
 export const CreatePostBody = zod.object({
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "eventId": zod.string().nullish(),
-  "labelIds": zod.array(zod.string()).nullish(),
-  "imageBase64": zod.string().max(createPostBodyImageBase64Max).nullish(),
-  "audioTrackId": zod.string().nullish(),
-  "audioTrackKey": zod.string().nullish(),
-  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
-  "audioStartSeconds": zod.number().nullish(),
-  "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish(),
-  "reelFadeInSeconds": zod.number().nullish(),
-  "reelFadeOutSeconds": zod.number().nullish()
-})
+  title: zod.string().nullish(),
+  text: zod.string(),
+  eventId: zod.string().nullish(),
+  labelIds: zod.array(zod.string()).nullish(),
+  imageBase64: zod.string().max(createPostBodyImageBase64Max).nullish(),
+  audioTrackId: zod.string().nullish(),
+  audioTrackKey: zod.string().nullish(),
+  audioSelectionMode: zod
+    .union([zod.literal("AUTO"), zod.literal("MANUAL"), zod.literal(null)])
+    .nullish(),
+  audioStartSeconds: zod.number().nullish(),
+  audioVolume: zod.number().nullish(),
+  reelDurationSeconds: zod.number().nullish(),
+  reelFadeInSeconds: zod.number().nullish(),
+  reelFadeOutSeconds: zod.number().nullish(),
+});
 
 export const CreatePostResponse = zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-})
-
+  id: zod.string(),
+  eventId: zod.string().nullish(),
+  kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+  status: zod.enum([
+    "DRAFT",
+    "VALIDATING",
+    "VALIDATED",
+    "MANUAL_REVIEW",
+    "REJECTED",
+    "PUBLISHED",
+  ]),
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labels: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  validationReason: zod.string().nullish(),
+  correctionOfPostId: zod.string().nullish(),
+  replacementFactIds: zod.array(zod.string()).nullish(),
+  createdBy: zod.string().nullish(),
+  updatedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+  publishedAt: zod.string().nullish(),
+  archivedAt: zod.string().nullish(),
+});
 
 /**
  * @summary Get a post (admin)
  */
 export const GetAdminPostParams = zod.object({
-  "postId": zod.coerce.string()
-})
+  postId: zod.coerce.string(),
+});
 
 export const GetAdminPostResponse = zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish(),
-  "sourceImageKey": zod.string().nullish(),
-  "graphicSourceMode": zod.enum(['AUTO', 'NO_SOURCE_IMAGE']).optional(),
-  "audioTrackId": zod.string().nullish(),
-  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
-  "audioStartSeconds": zod.number().nullish(),
-  "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish(),
-  "reelFadeInSeconds": zod.number().nullish(),
-  "reelFadeOutSeconds": zod.number().nullish(),
-  "publication": zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-}).optional(),
-  "deliveries": zod.array(zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-})).nullish()
-})
-
+  id: zod.string(),
+  eventId: zod.string().nullish(),
+  kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+  status: zod.enum([
+    "DRAFT",
+    "VALIDATING",
+    "VALIDATED",
+    "MANUAL_REVIEW",
+    "REJECTED",
+    "PUBLISHED",
+  ]),
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labels: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  validationReason: zod.string().nullish(),
+  correctionOfPostId: zod.string().nullish(),
+  replacementFactIds: zod.array(zod.string()).nullish(),
+  createdBy: zod.string().nullish(),
+  updatedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+  publishedAt: zod.string().nullish(),
+  archivedAt: zod.string().nullish(),
+  sourceImageKey: zod.string().nullish(),
+  graphicSourceMode: zod.enum(["AUTO", "NO_SOURCE_IMAGE"]).optional(),
+  audioTrackId: zod.string().nullish(),
+  audioSelectionMode: zod
+    .union([zod.literal("AUTO"), zod.literal("MANUAL"), zod.literal(null)])
+    .nullish(),
+  audioStartSeconds: zod.number().nullish(),
+  audioVolume: zod.number().nullish(),
+  reelDurationSeconds: zod.number().nullish(),
+  reelFadeInSeconds: zod.number().nullish(),
+  reelFadeOutSeconds: zod.number().nullish(),
+  publication: zod
+    .object({
+      id: zod.string(),
+      postId: zod.string(),
+      revision: zod.number(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  deliveries: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        publicationId: zod.string(),
+        platform: zod.string(),
+        destination: zod.string().nullish(),
+        idempotencyKey: zod.string().nullish(),
+        status: zod.enum([
+          "PENDING",
+          "WAITING_FOR_ASSET",
+          "RENDERING",
+          "READY",
+          "SENDING",
+          "SENT",
+          "RETRY",
+          "FAILED",
+          "DEAD",
+          "UNKNOWN",
+        ]),
+        format: zod.enum(["IMAGE", "REEL"]),
+        attemptCount: zod.number(),
+        lastError: zod.string().nullish(),
+        sentAt: zod.string().nullish(),
+      }),
+    )
+    .nullish(),
+});
 
 /**
  * @summary Edit a mutable post
  */
 export const UpdatePostParams = zod.object({
-  "postId": zod.coerce.string()
-})
+  postId: zod.coerce.string(),
+});
 
 export const updatePostBodyImageBase64Max = 10485760;
 
-
-
 export const UpdatePostBody = zod.object({
-  "title": zod.string().nullish(),
-  "text": zod.string().nullish(),
-  "eventId": zod.string().nullish(),
-  "labelIds": zod.array(zod.string()).nullish(),
-  "imageBase64": zod.string().max(updatePostBodyImageBase64Max).nullish(),
-  "audioTrackId": zod.string().nullish(),
-  "audioTrackKey": zod.string().nullish(),
-  "audioSelectionMode": zod.union([zod.literal('AUTO'),zod.literal('MANUAL'),zod.literal(null)]).nullish(),
-  "audioStartSeconds": zod.number().nullish(),
-  "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish(),
-  "reelFadeInSeconds": zod.number().nullish(),
-  "reelFadeOutSeconds": zod.number().nullish()
-})
+  title: zod.string().nullish(),
+  text: zod.string().nullish(),
+  eventId: zod.string().nullish(),
+  labelIds: zod.array(zod.string()).nullish(),
+  imageBase64: zod.string().max(updatePostBodyImageBase64Max).nullish(),
+  audioTrackId: zod.string().nullish(),
+  audioTrackKey: zod.string().nullish(),
+  audioSelectionMode: zod
+    .union([zod.literal("AUTO"), zod.literal("MANUAL"), zod.literal(null)])
+    .nullish(),
+  audioStartSeconds: zod.number().nullish(),
+  audioVolume: zod.number().nullish(),
+  reelDurationSeconds: zod.number().nullish(),
+  reelFadeInSeconds: zod.number().nullish(),
+  reelFadeOutSeconds: zod.number().nullish(),
+});
 
 export const UpdatePostResponse = zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-})
-
+  id: zod.string(),
+  eventId: zod.string().nullish(),
+  kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+  status: zod.enum([
+    "DRAFT",
+    "VALIDATING",
+    "VALIDATED",
+    "MANUAL_REVIEW",
+    "REJECTED",
+    "PUBLISHED",
+  ]),
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labels: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  validationReason: zod.string().nullish(),
+  correctionOfPostId: zod.string().nullish(),
+  replacementFactIds: zod.array(zod.string()).nullish(),
+  createdBy: zod.string().nullish(),
+  updatedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+  publishedAt: zod.string().nullish(),
+  archivedAt: zod.string().nullish(),
+});
 
 /**
  * @summary Archive an unpublished post
  */
 export const DeletePostParams = zod.object({
-  "postId": zod.coerce.string()
-})
+  postId: zod.coerce.string(),
+});
 
 export const DeletePostResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Publish a post to destinations
  */
 export const PublishPostParams = zod.object({
-  "postId": zod.coerce.string()
-})
+  postId: zod.coerce.string(),
+});
+
+export const publishPostBodyDestinationsItemOptionsTitleMax = 100;
+
+export const publishPostBodyDestinationsItemOptionsDescriptionMax = 5000;
 
 export const PublishPostBody = zod.object({
-  "destinations": zod.array(zod.object({
-  "platform": zod.enum(['telegram', 'instagram', 'x', 'webhook', 'whatsapp']),
-  "destination": zod.string(),
-  "format": zod.enum(['IMAGE', 'REEL']).optional()
-}))
-})
+  destinations: zod.array(
+    zod.object({
+      platform: zod.enum([
+        "telegram",
+        "instagram",
+        "youtube",
+        "x",
+        "webhook",
+        "whatsapp",
+      ]),
+      destination: zod.string(),
+      format: zod.enum(["IMAGE", "REEL"]).optional(),
+      options: zod
+        .object({
+          title: zod
+            .string()
+            .max(publishPostBodyDestinationsItemOptionsTitleMax),
+          description: zod
+            .string()
+            .max(publishPostBodyDestinationsItemOptionsDescriptionMax),
+          privacyStatus: zod.enum(["private", "unlisted", "public"]),
+        })
+        .optional(),
+    }),
+  ),
+});
 
 export const PublishPostResponse = zod.object({
-  "ok": zod.boolean()
-})
+  ok: zod.boolean(),
+});
 
+/**
+ * @summary Get the unified Story and Reel workspace
+ */
+export const GetPostStudioParams = zod.object({
+  postId: zod.coerce.string(),
+});
+
+export const getPostStudioResponseReelConfigRenderingDurationSecondsMin = 3;
+export const getPostStudioResponseReelConfigRenderingDurationSecondsMax = 90;
+
+export const GetPostStudioResponse = zod.object({
+  post: zod.object({
+    id: zod.string(),
+    eventId: zod.string().nullish(),
+    kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+    status: zod.enum([
+      "DRAFT",
+      "VALIDATING",
+      "VALIDATED",
+      "MANUAL_REVIEW",
+      "REJECTED",
+      "PUBLISHED",
+    ]),
+    title: zod.string().nullish(),
+    text: zod.string(),
+    labels: zod.array(
+      zod.object({
+        id: zod.string(),
+        name: zod.string(),
+        slug: zod.string(),
+        description: zod.string().nullish(),
+        color: zod.string(),
+        visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+        archivedAt: zod.string().nullish(),
+        createdAt: zod.string(),
+        updatedAt: zod.string(),
+      }),
+    ),
+    validationReason: zod.string().nullish(),
+    correctionOfPostId: zod.string().nullish(),
+    replacementFactIds: zod.array(zod.string()).nullish(),
+    createdBy: zod.string().nullish(),
+    updatedBy: zod.string().nullish(),
+    createdAt: zod.string(),
+    publishedAt: zod.string().nullish(),
+    archivedAt: zod.string().nullish(),
+    sourceImageKey: zod.string().nullish(),
+    graphicSourceMode: zod.enum(["AUTO", "NO_SOURCE_IMAGE"]).optional(),
+    audioTrackId: zod.string().nullish(),
+    audioSelectionMode: zod
+      .union([zod.literal("AUTO"), zod.literal("MANUAL"), zod.literal(null)])
+      .nullish(),
+    audioStartSeconds: zod.number().nullish(),
+    audioVolume: zod.number().nullish(),
+    reelDurationSeconds: zod.number().nullish(),
+    reelFadeInSeconds: zod.number().nullish(),
+    reelFadeOutSeconds: zod.number().nullish(),
+    publication: zod
+      .object({
+        id: zod.string(),
+        postId: zod.string(),
+        revision: zod.number(),
+        createdAt: zod.string(),
+      })
+      .optional(),
+    deliveries: zod
+      .array(
+        zod.object({
+          id: zod.string(),
+          publicationId: zod.string(),
+          platform: zod.string(),
+          destination: zod.string().nullish(),
+          idempotencyKey: zod.string().nullish(),
+          status: zod.enum([
+            "PENDING",
+            "WAITING_FOR_ASSET",
+            "RENDERING",
+            "READY",
+            "SENDING",
+            "SENT",
+            "RETRY",
+            "FAILED",
+            "DEAD",
+            "UNKNOWN",
+          ]),
+          format: zod.enum(["IMAGE", "REEL"]),
+          attemptCount: zod.number(),
+          lastError: zod.string().nullish(),
+          sentAt: zod.string().nullish(),
+        }),
+      )
+      .nullish(),
+  }),
+  reelConfig: zod.object({
+    postId: zod.string(),
+    version: zod.number(),
+    visual: zod.object({
+      mode: zod.enum(["ORIGINAL", "CUSTOM", "GENERATED", "NONE"]),
+      assetId: zod.string().nullable(),
+    }),
+    audio: zod.object({
+      mode: zod.enum(["AUTO", "TRACK", "UPLOAD", "NONE"]),
+      trackId: zod.string().nullable(),
+      autoFilters: zod.object({
+        theme: zod.string().optional(),
+        energy: zod.enum(["CALM", "NEUTRAL", "UPBEAT"]).optional(),
+        tags: zod.array(zod.string()),
+      }),
+      startSeconds: zod.number(),
+      volume: zod.number(),
+      fadeInSeconds: zod.number(),
+      fadeOutSeconds: zod.number(),
+    }),
+    rendering: zod.object({
+      durationSeconds: zod
+        .number()
+        .min(getPostStudioResponseReelConfigRenderingDurationSecondsMin)
+        .max(getPostStudioResponseReelConfigRenderingDurationSecondsMax),
+      template: zod.enum(["scrollbrief-card-v1"]),
+    }),
+    disclosure: zod.object({
+      containsSyntheticMedia: zod.boolean().nullable(),
+    }),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string().nullish(),
+  }),
+  authoritativePreviewConfigHash: zod.string().nullish(),
+  authoritativeConfigHash: zod.string().nullish(),
+  imageAssets: zod.array(zod.record(zod.string(), zod.unknown())),
+  renders: zod.array(
+    zod.object({
+      id: zod.string(),
+      postId: zod.string(),
+      type: zod.enum(["PREVIEW", "FINAL"]),
+      status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+      configVersion: zod.number(),
+      configHash: zod.string(),
+      outputAssetId: zod.string().nullish(),
+      outputUrl: zod.string().nullish(),
+      errorCode: zod.string().nullish(),
+      errorMessage: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  latestPreview: zod
+    .union([
+      zod.object({
+        id: zod.string(),
+        postId: zod.string(),
+        type: zod.enum(["PREVIEW", "FINAL"]),
+        status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+        configVersion: zod.number(),
+        configHash: zod.string(),
+        outputAssetId: zod.string().nullish(),
+        outputUrl: zod.string().nullish(),
+        errorCode: zod.string().nullish(),
+        errorMessage: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  latestFinal: zod
+    .union([
+      zod.object({
+        id: zod.string(),
+        postId: zod.string(),
+        type: zod.enum(["PREVIEW", "FINAL"]),
+        status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+        configVersion: zod.number(),
+        configHash: zod.string(),
+        outputAssetId: zod.string().nullish(),
+        outputUrl: zod.string().nullish(),
+        errorCode: zod.string().nullish(),
+        errorMessage: zod.string().nullish(),
+        createdAt: zod.coerce.date(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  capabilities: zod.record(zod.string(), zod.boolean()),
+});
+
+/**
+ * @summary Replace the canonical Reel configuration
+ */
+export const UpdatePostReelConfigParams = zod.object({
+  postId: zod.coerce.string(),
+});
+
+export const updatePostReelConfigBodyRenderingDurationSecondsMin = 3;
+export const updatePostReelConfigBodyRenderingDurationSecondsMax = 90;
+
+export const UpdatePostReelConfigBody = zod.object({
+  expectedVersion: zod.number().min(1),
+  visual: zod.object({
+    mode: zod.enum(["ORIGINAL", "CUSTOM", "GENERATED", "NONE"]),
+    assetId: zod.string().nullable(),
+  }),
+  audio: zod.object({
+    mode: zod.enum(["AUTO", "TRACK", "UPLOAD", "NONE"]),
+    trackId: zod.string().nullable(),
+    autoFilters: zod.object({
+      theme: zod.string().optional(),
+      energy: zod.enum(["CALM", "NEUTRAL", "UPBEAT"]).optional(),
+      tags: zod.array(zod.string()),
+    }),
+    startSeconds: zod.number(),
+    volume: zod.number(),
+    fadeInSeconds: zod.number(),
+    fadeOutSeconds: zod.number(),
+  }),
+  rendering: zod.object({
+    durationSeconds: zod
+      .number()
+      .min(updatePostReelConfigBodyRenderingDurationSecondsMin)
+      .max(updatePostReelConfigBodyRenderingDurationSecondsMax),
+    template: zod.enum(["scrollbrief-card-v1"]),
+  }),
+  disclosure: zod.object({
+    containsSyntheticMedia: zod.boolean().nullable(),
+  }),
+});
+
+export const updatePostReelConfigResponseRenderingDurationSecondsMin = 3;
+export const updatePostReelConfigResponseRenderingDurationSecondsMax = 90;
+
+export const UpdatePostReelConfigResponse = zod.object({
+  postId: zod.string(),
+  version: zod.number(),
+  visual: zod.object({
+    mode: zod.enum(["ORIGINAL", "CUSTOM", "GENERATED", "NONE"]),
+    assetId: zod.string().nullable(),
+  }),
+  audio: zod.object({
+    mode: zod.enum(["AUTO", "TRACK", "UPLOAD", "NONE"]),
+    trackId: zod.string().nullable(),
+    autoFilters: zod.object({
+      theme: zod.string().optional(),
+      energy: zod.enum(["CALM", "NEUTRAL", "UPBEAT"]).optional(),
+      tags: zod.array(zod.string()),
+    }),
+    startSeconds: zod.number(),
+    volume: zod.number(),
+    fadeInSeconds: zod.number(),
+    fadeOutSeconds: zod.number(),
+  }),
+  rendering: zod.object({
+    durationSeconds: zod
+      .number()
+      .min(updatePostReelConfigResponseRenderingDurationSecondsMin)
+      .max(updatePostReelConfigResponseRenderingDurationSecondsMax),
+    template: zod.enum(["scrollbrief-card-v1"]),
+  }),
+  disclosure: zod.object({
+    containsSyntheticMedia: zod.boolean().nullable(),
+  }),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string().nullish(),
+});
+
+/**
+ * @summary Persist another automatic audio suggestion
+ */
+export const RefreshPostAutoAudioParams = zod.object({
+  postId: zod.coerce.string(),
+});
+
+export const RefreshPostAutoAudioBody = zod.object({
+  expectedVersion: zod.number().min(1),
+});
+
+export const refreshPostAutoAudioResponseRenderingDurationSecondsMin = 3;
+export const refreshPostAutoAudioResponseRenderingDurationSecondsMax = 90;
+
+export const RefreshPostAutoAudioResponse = zod.object({
+  postId: zod.string(),
+  version: zod.number(),
+  visual: zod.object({
+    mode: zod.enum(["ORIGINAL", "CUSTOM", "GENERATED", "NONE"]),
+    assetId: zod.string().nullable(),
+  }),
+  audio: zod.object({
+    mode: zod.enum(["AUTO", "TRACK", "UPLOAD", "NONE"]),
+    trackId: zod.string().nullable(),
+    autoFilters: zod.object({
+      theme: zod.string().optional(),
+      energy: zod.enum(["CALM", "NEUTRAL", "UPBEAT"]).optional(),
+      tags: zod.array(zod.string()),
+    }),
+    startSeconds: zod.number(),
+    volume: zod.number(),
+    fadeInSeconds: zod.number(),
+    fadeOutSeconds: zod.number(),
+  }),
+  rendering: zod.object({
+    durationSeconds: zod
+      .number()
+      .min(refreshPostAutoAudioResponseRenderingDurationSecondsMin)
+      .max(refreshPostAutoAudioResponseRenderingDurationSecondsMax),
+    template: zod.enum(["scrollbrief-card-v1"]),
+  }),
+  disclosure: zod.object({
+    containsSyntheticMedia: zod.boolean().nullable(),
+  }),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string().nullish(),
+});
+
+export const ListPostRendersParams = zod.object({
+  postId: zod.coerce.string(),
+});
+
+export const ListPostRendersResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      postId: zod.string(),
+      type: zod.enum(["PREVIEW", "FINAL"]),
+      status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+      configVersion: zod.number(),
+      configHash: zod.string(),
+      outputAssetId: zod.string().nullish(),
+      outputUrl: zod.string().nullish(),
+      errorCode: zod.string().nullish(),
+      errorMessage: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const CreatePostRenderParams = zod.object({
+  postId: zod.coerce.string(),
+});
+
+export const CreatePostRenderBody = zod.object({
+  type: zod.enum(["PREVIEW"]),
+  expectedConfigVersion: zod.number().min(1),
+});
+
+export const CreatePostRenderResponse = zod.object({
+  id: zod.string(),
+  postId: zod.string(),
+  type: zod.enum(["PREVIEW", "FINAL"]),
+  status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+  configVersion: zod.number(),
+  configHash: zod.string(),
+  outputAssetId: zod.string().nullish(),
+  outputUrl: zod.string().nullish(),
+  errorCode: zod.string().nullish(),
+  errorMessage: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+export const GetPostRenderParams = zod.object({
+  postId: zod.coerce.string(),
+  renderId: zod.coerce.string(),
+});
+
+export const GetPostRenderResponse = zod.object({
+  id: zod.string(),
+  postId: zod.string(),
+  type: zod.enum(["PREVIEW", "FINAL"]),
+  status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+  configVersion: zod.number(),
+  configHash: zod.string(),
+  outputAssetId: zod.string().nullish(),
+  outputUrl: zod.string().nullish(),
+  errorCode: zod.string().nullish(),
+  errorMessage: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Production-render the current preview as the canonical Reel
+ */
+export const FinalizePostRenderParams = zod.object({
+  postId: zod.coerce.string(),
+  renderId: zod.coerce.string(),
+});
+
+export const FinalizePostRenderBody = zod.object({
+  expectedConfigVersion: zod.number().min(1),
+});
+
+export const FinalizePostRenderResponse = zod.object({
+  id: zod.string(),
+  postId: zod.string(),
+  type: zod.enum(["PREVIEW", "FINAL"]),
+  status: zod.enum(["QUEUED", "RENDERING", "COMPLETED", "FAILED"]),
+  configVersion: zod.number(),
+  configHash: zod.string(),
+  outputAssetId: zod.string().nullish(),
+  outputUrl: zod.string().nullish(),
+  errorCode: zod.string().nullish(),
+  errorMessage: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
 
 /**
  * @summary Create a correction draft for a published post
  */
 export const CreateCorrectionParams = zod.object({
-  "postId": zod.coerce.string()
-})
+  postId: zod.coerce.string(),
+});
 
 export const CreateCorrectionBody = zod.object({
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labelIds": zod.array(zod.string()).nullish()
-})
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labelIds: zod.array(zod.string()).nullish(),
+});
 
 export const CreateCorrectionResponse = zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-})
-
+  id: zod.string(),
+  eventId: zod.string().nullish(),
+  kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+  status: zod.enum([
+    "DRAFT",
+    "VALIDATING",
+    "VALIDATED",
+    "MANUAL_REVIEW",
+    "REJECTED",
+    "PUBLISHED",
+  ]),
+  title: zod.string().nullish(),
+  text: zod.string(),
+  labels: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      slug: zod.string(),
+      description: zod.string().nullish(),
+      color: zod.string(),
+      visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+      archivedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+  validationReason: zod.string().nullish(),
+  correctionOfPostId: zod.string().nullish(),
+  replacementFactIds: zod.array(zod.string()).nullish(),
+  createdBy: zod.string().nullish(),
+  updatedBy: zod.string().nullish(),
+  createdAt: zod.string(),
+  publishedAt: zod.string().nullish(),
+  archivedAt: zod.string().nullish(),
+});
 
 /**
  * @summary List manual-review jobs
  */
 export const GetReviewQueueQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+});
 
 export const GetReviewQueueResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "version": zod.number(),
-  "status": zod.string(),
-  "postId": zod.string().nullish(),
-  "eventId": zod.string().nullish(),
-  "payload": zod.record(zod.string(), zod.unknown()).optional(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string().nullish()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      version: zod.number(),
+      status: zod.string(),
+      postId: zod.string().nullish(),
+      eventId: zod.string().nullish(),
+      payload: zod.record(zod.string(), zod.unknown()).optional(),
+      createdAt: zod.string(),
+      updatedAt: zod.string().nullish(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Approve a review job
  */
 export const ApproveReviewJobParams = zod.object({
-  "jobId": zod.coerce.string()
-})
+  jobId: zod.coerce.string(),
+});
 
 export const ApproveReviewJobBody = zod.object({
-  "version": zod.literal(1),
-  "action": zod.enum(['APPROVE', 'REJECT', 'REQUEUE', 'REQUEST_CORRECTION']),
-  "reason": zod.string(),
-  "expectedVersion": zod.number()
-})
+  version: zod.literal(1),
+  action: zod.enum(["APPROVE", "REJECT", "REQUEUE", "REQUEST_CORRECTION"]),
+  reason: zod.string(),
+  expectedVersion: zod.number(),
+});
 
 export const ApproveReviewJobResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Reject a review job
  */
 export const RejectReviewJobParams = zod.object({
-  "jobId": zod.coerce.string()
-})
+  jobId: zod.coerce.string(),
+});
 
 export const RejectReviewJobBody = zod.object({
-  "version": zod.literal(1),
-  "action": zod.enum(['APPROVE', 'REJECT', 'REQUEUE', 'REQUEST_CORRECTION']),
-  "reason": zod.string(),
-  "expectedVersion": zod.number()
-})
+  version: zod.literal(1),
+  action: zod.enum(["APPROVE", "REJECT", "REQUEUE", "REQUEST_CORRECTION"]),
+  reason: zod.string(),
+  expectedVersion: zod.number(),
+});
 
 export const RejectReviewJobResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Requeue a review job
  */
 export const RequeueReviewJobParams = zod.object({
-  "jobId": zod.coerce.string()
-})
+  jobId: zod.coerce.string(),
+});
 
 export const RequeueReviewJobBody = zod.object({
-  "version": zod.literal(1),
-  "action": zod.enum(['APPROVE', 'REJECT', 'REQUEUE', 'REQUEST_CORRECTION']),
-  "reason": zod.string(),
-  "expectedVersion": zod.number()
-})
+  version: zod.literal(1),
+  action: zod.enum(["APPROVE", "REJECT", "REQUEUE", "REQUEST_CORRECTION"]),
+  reason: zod.string(),
+  expectedVersion: zod.number(),
+});
 
 export const RequeueReviewJobResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Request correction for a review job
  */
 export const RequestCorrectionReviewJobParams = zod.object({
-  "jobId": zod.coerce.string()
-})
+  jobId: zod.coerce.string(),
+});
 
 export const RequestCorrectionReviewJobBody = zod.object({
-  "version": zod.literal(1),
-  "action": zod.enum(['APPROVE', 'REJECT', 'REQUEUE', 'REQUEST_CORRECTION']),
-  "reason": zod.string(),
-  "expectedVersion": zod.number()
-})
+  version: zod.literal(1),
+  action: zod.enum(["APPROVE", "REJECT", "REQUEUE", "REQUEST_CORRECTION"]),
+  reason: zod.string(),
+  expectedVersion: zod.number(),
+});
 
 export const RequestCorrectionReviewJobResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Get event detail
  */
 export const GetEventParams = zod.object({
-  "eventId": zod.coerce.string()
-})
+  eventId: zod.coerce.string(),
+});
 
 export const GetEventResponse = zod.object({
-  "event": zod.record(zod.string(), zod.unknown()).optional(),
-  "claims": zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
-  "claimEvidence": zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
-  "facts": zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
-  "post": zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-}).optional(),
-  "publication": zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-}).optional(),
-  "deliveries": zod.array(zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-})).nullish()
-})
-
+  event: zod.record(zod.string(), zod.unknown()).optional(),
+  claims: zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
+  claimEvidence: zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
+  facts: zod.array(zod.record(zod.string(), zod.unknown())).nullish(),
+  post: zod
+    .object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      status: zod.enum([
+        "DRAFT",
+        "VALIDATING",
+        "VALIDATED",
+        "MANUAL_REVIEW",
+        "REJECTED",
+        "PUBLISHED",
+      ]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      validationReason: zod.string().nullish(),
+      correctionOfPostId: zod.string().nullish(),
+      replacementFactIds: zod.array(zod.string()).nullish(),
+      createdBy: zod.string().nullish(),
+      updatedBy: zod.string().nullish(),
+      createdAt: zod.string(),
+      publishedAt: zod.string().nullish(),
+      archivedAt: zod.string().nullish(),
+    })
+    .optional(),
+  publication: zod
+    .object({
+      id: zod.string(),
+      postId: zod.string(),
+      revision: zod.number(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  deliveries: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        publicationId: zod.string(),
+        platform: zod.string(),
+        destination: zod.string().nullish(),
+        idempotencyKey: zod.string().nullish(),
+        status: zod.enum([
+          "PENDING",
+          "WAITING_FOR_ASSET",
+          "RENDERING",
+          "READY",
+          "SENDING",
+          "SENT",
+          "RETRY",
+          "FAILED",
+          "DEAD",
+          "UNKNOWN",
+        ]),
+        format: zod.enum(["IMAGE", "REEL"]),
+        attemptCount: zod.number(),
+        lastError: zod.string().nullish(),
+        sentAt: zod.string().nullish(),
+      }),
+    )
+    .nullish(),
+});
 
 /**
  * @summary Get editorial topic signals for an event
  */
 export const GetEventTopicsParams = zod.object({
-  "eventId": zod.coerce.string()
-})
+  eventId: zod.coerce.string(),
+});
 
 export const GetEventTopicsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "mode": zod.string().nullish(),
-  "boost": zod.number().nullish(),
-  "reason": zod.string().nullish(),
-  "expiresAt": zod.string().nullish()
-}))
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      mode: zod.string().nullish(),
+      boost: zod.number().nullish(),
+      reason: zod.string().nullish(),
+      expiresAt: zod.string().nullish(),
+    }),
+  ),
+});
 
 /**
  * @summary Override an editorial topic
  */
 export const OverrideTopicParams = zod.object({
-  "topicId": zod.coerce.string()
-})
+  topicId: zod.coerce.string(),
+});
 
 export const OverrideTopicBody = zod.object({
-  "version": zod.number(),
-  "mode": zod.enum(['BOOST', 'PIN', 'SUPPRESS']),
-  "boost": zod.number().nullish(),
-  "reason": zod.string(),
-  "expiresAt": zod.string().nullish()
-})
+  version: zod.number(),
+  mode: zod.enum(["BOOST", "PIN", "SUPPRESS"]),
+  boost: zod.number().nullish(),
+  reason: zod.string(),
+  expiresAt: zod.string().nullish(),
+});
 
 export const OverrideTopicResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Get audit timeline for an entity
  */
 export const GetAuditTimelineParams = zod.object({
-  "entityType": zod.coerce.string(),
-  "entityId": zod.coerce.string()
-})
+  entityType: zod.coerce.string(),
+  entityId: zod.coerce.string(),
+});
 
 export const GetAuditTimelineResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "entityType": zod.string(),
-  "entityId": zod.string(),
-  "action": zod.string(),
-  "actor": zod.string().nullish(),
-  "payload": zod.record(zod.string(), zod.unknown()).optional(),
-  "createdAt": zod.string()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      entityType: zod.string(),
+      entityId: zod.string(),
+      action: zod.string(),
+      actor: zod.string().nullish(),
+      payload: zod.record(zod.string(), zod.unknown()).optional(),
+      createdAt: zod.string(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary List publications
  */
 export const GetPublicationsQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+});
 
 export const GetPublicationsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      postId: zod.string(),
+      revision: zod.number(),
+      createdAt: zod.string(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Get a publication
  */
 export const GetPublicationParams = zod.object({
-  "publicationId": zod.coerce.string()
-})
+  publicationId: zod.coerce.string(),
+});
 
 export const GetPublicationResponse = zod.object({
-  "publication": zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-}),
-  "post": zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-}).optional(),
-  "deliveries": zod.array(zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-})).optional()
-})
-
+  publication: zod.object({
+    id: zod.string(),
+    postId: zod.string(),
+    revision: zod.number(),
+    createdAt: zod.string(),
+  }),
+  post: zod
+    .object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      status: zod.enum([
+        "DRAFT",
+        "VALIDATING",
+        "VALIDATED",
+        "MANUAL_REVIEW",
+        "REJECTED",
+        "PUBLISHED",
+      ]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      validationReason: zod.string().nullish(),
+      correctionOfPostId: zod.string().nullish(),
+      replacementFactIds: zod.array(zod.string()).nullish(),
+      createdBy: zod.string().nullish(),
+      updatedBy: zod.string().nullish(),
+      createdAt: zod.string(),
+      publishedAt: zod.string().nullish(),
+      archivedAt: zod.string().nullish(),
+    })
+    .optional(),
+  deliveries: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        publicationId: zod.string(),
+        platform: zod.string(),
+        destination: zod.string().nullish(),
+        idempotencyKey: zod.string().nullish(),
+        status: zod.enum([
+          "PENDING",
+          "WAITING_FOR_ASSET",
+          "RENDERING",
+          "READY",
+          "SENDING",
+          "SENT",
+          "RETRY",
+          "FAILED",
+          "DEAD",
+          "UNKNOWN",
+        ]),
+        format: zod.enum(["IMAGE", "REEL"]),
+        attemptCount: zod.number(),
+        lastError: zod.string().nullish(),
+        sentAt: zod.string().nullish(),
+      }),
+    )
+    .optional(),
+});
 
 /**
  * @summary List deliveries
  */
 export const GetDeliveriesQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish(),
-  "status": zod.coerce.string().nullish(),
-  "platform": zod.coerce.string().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+  status: zod.coerce.string().nullish(),
+  platform: zod.coerce.string().nullish(),
+});
 
 export const GetDeliveriesResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      publicationId: zod.string(),
+      platform: zod.string(),
+      destination: zod.string().nullish(),
+      idempotencyKey: zod.string().nullish(),
+      status: zod.enum([
+        "PENDING",
+        "WAITING_FOR_ASSET",
+        "RENDERING",
+        "READY",
+        "SENDING",
+        "SENT",
+        "RETRY",
+        "FAILED",
+        "DEAD",
+        "UNKNOWN",
+      ]),
+      format: zod.enum(["IMAGE", "REEL"]),
+      attemptCount: zod.number(),
+      lastError: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Get a delivery
  */
 export const GetDeliveryParams = zod.object({
-  "deliveryId": zod.coerce.string()
-})
+  deliveryId: zod.coerce.string(),
+});
 
 export const GetDeliveryResponse = zod.object({
-  "delivery": zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-}),
-  "publication": zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-}).optional(),
-  "post": zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-}).optional(),
-  "attempts": zod.array(zod.object({
-  "id": zod.string(),
-  "deliveryId": zod.string(),
-  "attemptNumber": zod.number(),
-  "outcome": zod.string().nullish(),
-  "remoteId": zod.string().nullish(),
-  "statusCode": zod.number().nullish(),
-  "errorMessage": zod.string().nullish(),
-  "requestPayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "responsePayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "createdAt": zod.string()
-})).optional()
-})
-
+  delivery: zod.object({
+    id: zod.string(),
+    publicationId: zod.string(),
+    platform: zod.string(),
+    destination: zod.string().nullish(),
+    idempotencyKey: zod.string().nullish(),
+    status: zod.enum([
+      "PENDING",
+      "WAITING_FOR_ASSET",
+      "RENDERING",
+      "READY",
+      "SENDING",
+      "SENT",
+      "RETRY",
+      "FAILED",
+      "DEAD",
+      "UNKNOWN",
+    ]),
+    format: zod.enum(["IMAGE", "REEL"]),
+    attemptCount: zod.number(),
+    lastError: zod.string().nullish(),
+    sentAt: zod.string().nullish(),
+  }),
+  publication: zod
+    .object({
+      id: zod.string(),
+      postId: zod.string(),
+      revision: zod.number(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  post: zod
+    .object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      status: zod.enum([
+        "DRAFT",
+        "VALIDATING",
+        "VALIDATED",
+        "MANUAL_REVIEW",
+        "REJECTED",
+        "PUBLISHED",
+      ]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      validationReason: zod.string().nullish(),
+      correctionOfPostId: zod.string().nullish(),
+      replacementFactIds: zod.array(zod.string()).nullish(),
+      createdBy: zod.string().nullish(),
+      updatedBy: zod.string().nullish(),
+      createdAt: zod.string(),
+      publishedAt: zod.string().nullish(),
+      archivedAt: zod.string().nullish(),
+    })
+    .optional(),
+  attempts: zod
+    .array(
+      zod.object({
+        id: zod.string(),
+        deliveryId: zod.string(),
+        attemptNumber: zod.number(),
+        outcome: zod.string().nullish(),
+        remoteId: zod.string().nullish(),
+        statusCode: zod.number().nullish(),
+        errorMessage: zod.string().nullish(),
+        requestPayload: zod.record(zod.string(), zod.unknown()).optional(),
+        responsePayload: zod.record(zod.string(), zod.unknown()).optional(),
+        createdAt: zod.string(),
+      }),
+    )
+    .optional(),
+});
 
 /**
  * @summary Retry a failed delivery
  */
 export const RetryDeliveryParams = zod.object({
-  "deliveryId": zod.coerce.string()
-})
+  deliveryId: zod.coerce.string(),
+});
 
 export const RetryDeliveryBody = zod.object({
-  "reason": zod.string()
-})
+  reason: zod.string(),
+});
 
 export const RetryDeliveryResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary Reconcile an unknown delivery
  */
 export const ReconcileDeliveryParams = zod.object({
-  "deliveryId": zod.coerce.string()
-})
+  deliveryId: zod.coerce.string(),
+});
 
 export const ReconcileDeliveryBody = zod.object({
-  "outcome": zod.enum(['SENT', 'NOT_SENT', 'FAILED']),
-  "reason": zod.string()
-})
+  outcome: zod.enum(["SENT", "NOT_SENT", "FAILED"]),
+  reason: zod.string(),
+});
 
 export const ReconcileDeliveryResponse = zod.object({
-  "ok": zod.boolean()
-})
-
+  ok: zod.boolean(),
+});
 
 /**
  * @summary List platform posts
  */
 export const GetPlatformPostsQueryParams = zod.object({
-  "limit": zod.coerce.number().nullish(),
-  "cursor": zod.coerce.string().nullish(),
-  "platform": zod.coerce.string().nullish()
-})
+  limit: zod.coerce.number().nullish(),
+  cursor: zod.coerce.string().nullish(),
+  platform: zod.coerce.string().nullish(),
+});
 
 export const GetPlatformPostsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string(),
-  "postId": zod.string().nullish(),
-  "publicationId": zod.string().nullish(),
-  "deliveryId": zod.string().nullish(),
-  "attemptId": zod.string().nullish(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "remoteId": zod.string().nullish(),
-  "content": zod.string().nullish(),
-  "mediaUrl": zod.string().nullish(),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "audioTrackId": zod.string().nullish(),
-  "audioStorageKey": zod.string().nullish(),
-  "audioSource": zod.string().nullish(),
-  "audioNormalizedSha256": zod.string().nullish(),
-  "audioStartSeconds": zod.number().nullish(),
-  "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish(),
-  "requestPayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "responsePayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "publishedAt": zod.string().nullish(),
-  "createdAt": zod.string()
-})),
-  "nextCursor": zod.string().nullish()
-})
-
+  items: zod.array(
+    zod.object({
+      id: zod.string(),
+      postId: zod.string().nullish(),
+      publicationId: zod.string().nullish(),
+      deliveryId: zod.string().nullish(),
+      attemptId: zod.string().nullish(),
+      platform: zod.string(),
+      destination: zod.string().nullish(),
+      remoteId: zod.string().nullish(),
+      content: zod.string().nullish(),
+      mediaUrl: zod.string().nullish(),
+      format: zod.enum(["IMAGE", "REEL"]),
+      audioTrackId: zod.string().nullish(),
+      audioStorageKey: zod.string().nullish(),
+      audioSource: zod.string().nullish(),
+      audioNormalizedSha256: zod.string().nullish(),
+      audioStartSeconds: zod.number().nullish(),
+      audioVolume: zod.number().nullish(),
+      reelDurationSeconds: zod.number().nullish(),
+      requestPayload: zod.record(zod.string(), zod.unknown()).optional(),
+      responsePayload: zod.record(zod.string(), zod.unknown()).optional(),
+      publishedAt: zod.string().nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+  nextCursor: zod.string().nullish(),
+});
 
 /**
  * @summary Get a platform post
  */
 export const GetPlatformPostParams = zod.object({
-  "platformPostId": zod.coerce.string()
-})
+  platformPostId: zod.coerce.string(),
+});
 
 export const GetPlatformPostResponse = zod.object({
-  "platformPost": zod.object({
-  "id": zod.string(),
-  "postId": zod.string().nullish(),
-  "publicationId": zod.string().nullish(),
-  "deliveryId": zod.string().nullish(),
-  "attemptId": zod.string().nullish(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "remoteId": zod.string().nullish(),
-  "content": zod.string().nullish(),
-  "mediaUrl": zod.string().nullish(),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "audioTrackId": zod.string().nullish(),
-  "audioStorageKey": zod.string().nullish(),
-  "audioSource": zod.string().nullish(),
-  "audioNormalizedSha256": zod.string().nullish(),
-  "audioStartSeconds": zod.number().nullish(),
-  "audioVolume": zod.number().nullish(),
-  "reelDurationSeconds": zod.number().nullish(),
-  "requestPayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "responsePayload": zod.record(zod.string(), zod.unknown()).optional(),
-  "publishedAt": zod.string().nullish(),
-  "createdAt": zod.string()
-}),
-  "post": zod.object({
-  "id": zod.string(),
-  "eventId": zod.string().nullish(),
-  "kind": zod.enum(['ORIGINAL', 'CORRECTION', 'CUSTOM']),
-  "status": zod.enum(['DRAFT', 'VALIDATING', 'VALIDATED', 'MANUAL_REVIEW', 'REJECTED', 'PUBLISHED']),
-  "title": zod.string().nullish(),
-  "text": zod.string(),
-  "labels": zod.array(zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "slug": zod.string(),
-  "description": zod.string().nullish(),
-  "color": zod.string(),
-  "visibility": zod.enum(['PUBLIC', 'ADMIN_ONLY']),
-  "archivedAt": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string()
-})),
-  "validationReason": zod.string().nullish(),
-  "correctionOfPostId": zod.string().nullish(),
-  "replacementFactIds": zod.array(zod.string()).nullish(),
-  "createdBy": zod.string().nullish(),
-  "updatedBy": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "publishedAt": zod.string().nullish(),
-  "archivedAt": zod.string().nullish()
-}).optional(),
-  "publication": zod.object({
-  "id": zod.string(),
-  "postId": zod.string(),
-  "revision": zod.number(),
-  "createdAt": zod.string()
-}).optional(),
-  "delivery": zod.object({
-  "id": zod.string(),
-  "publicationId": zod.string(),
-  "platform": zod.string(),
-  "destination": zod.string().nullish(),
-  "idempotencyKey": zod.string().nullish(),
-  "status": zod.enum(['PENDING', 'WAITING_FOR_ASSET', 'RENDERING', 'READY', 'SENDING', 'SENT', 'RETRY', 'FAILED', 'DEAD', 'UNKNOWN']),
-  "format": zod.enum(['IMAGE', 'REEL']),
-  "attemptCount": zod.number(),
-  "lastError": zod.string().nullish(),
-  "sentAt": zod.string().nullish()
-}).optional()
-})
-
-
+  platformPost: zod.object({
+    id: zod.string(),
+    postId: zod.string().nullish(),
+    publicationId: zod.string().nullish(),
+    deliveryId: zod.string().nullish(),
+    attemptId: zod.string().nullish(),
+    platform: zod.string(),
+    destination: zod.string().nullish(),
+    remoteId: zod.string().nullish(),
+    content: zod.string().nullish(),
+    mediaUrl: zod.string().nullish(),
+    format: zod.enum(["IMAGE", "REEL"]),
+    audioTrackId: zod.string().nullish(),
+    audioStorageKey: zod.string().nullish(),
+    audioSource: zod.string().nullish(),
+    audioNormalizedSha256: zod.string().nullish(),
+    audioStartSeconds: zod.number().nullish(),
+    audioVolume: zod.number().nullish(),
+    reelDurationSeconds: zod.number().nullish(),
+    requestPayload: zod.record(zod.string(), zod.unknown()).optional(),
+    responsePayload: zod.record(zod.string(), zod.unknown()).optional(),
+    publishedAt: zod.string().nullish(),
+    createdAt: zod.string(),
+  }),
+  post: zod
+    .object({
+      id: zod.string(),
+      eventId: zod.string().nullish(),
+      kind: zod.enum(["ORIGINAL", "CORRECTION", "CUSTOM"]),
+      status: zod.enum([
+        "DRAFT",
+        "VALIDATING",
+        "VALIDATED",
+        "MANUAL_REVIEW",
+        "REJECTED",
+        "PUBLISHED",
+      ]),
+      title: zod.string().nullish(),
+      text: zod.string(),
+      labels: zod.array(
+        zod.object({
+          id: zod.string(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullish(),
+          color: zod.string(),
+          visibility: zod.enum(["PUBLIC", "ADMIN_ONLY"]),
+          archivedAt: zod.string().nullish(),
+          createdAt: zod.string(),
+          updatedAt: zod.string(),
+        }),
+      ),
+      validationReason: zod.string().nullish(),
+      correctionOfPostId: zod.string().nullish(),
+      replacementFactIds: zod.array(zod.string()).nullish(),
+      createdBy: zod.string().nullish(),
+      updatedBy: zod.string().nullish(),
+      createdAt: zod.string(),
+      publishedAt: zod.string().nullish(),
+      archivedAt: zod.string().nullish(),
+    })
+    .optional(),
+  publication: zod
+    .object({
+      id: zod.string(),
+      postId: zod.string(),
+      revision: zod.number(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  delivery: zod
+    .object({
+      id: zod.string(),
+      publicationId: zod.string(),
+      platform: zod.string(),
+      destination: zod.string().nullish(),
+      idempotencyKey: zod.string().nullish(),
+      status: zod.enum([
+        "PENDING",
+        "WAITING_FOR_ASSET",
+        "RENDERING",
+        "READY",
+        "SENDING",
+        "SENT",
+        "RETRY",
+        "FAILED",
+        "DEAD",
+        "UNKNOWN",
+      ]),
+      format: zod.enum(["IMAGE", "REEL"]),
+      attemptCount: zod.number(),
+      lastError: zod.string().nullish(),
+      sentAt: zod.string().nullish(),
+    })
+    .optional(),
+});

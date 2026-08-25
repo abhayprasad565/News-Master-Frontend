@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AuditEntry } from './auditEntry';
+import type { AuditEntry } from "./auditEntry";
 
 export interface AuditList {
   items: AuditEntry[];

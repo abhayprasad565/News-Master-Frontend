@@ -5,8 +5,8 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { DeliveryFormat } from './deliveryFormat';
-import type { DeliveryStatus } from './deliveryStatus';
+import type { DeliveryFormat } from "./deliveryFormat";
+import type { DeliveryStatus } from "./deliveryStatus";
 
 export interface Delivery {
   id: string;

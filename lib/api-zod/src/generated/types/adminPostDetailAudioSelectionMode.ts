@@ -9,10 +9,11 @@
 /**
  * @nullable
  */
-export type AdminPostDetailAudioSelectionMode = typeof AdminPostDetailAudioSelectionMode[keyof typeof AdminPostDetailAudioSelectionMode] | null;
-
+export type AdminPostDetailAudioSelectionMode =
+  | (typeof AdminPostDetailAudioSelectionMode)[keyof typeof AdminPostDetailAudioSelectionMode]
+  | null;
 
 export const AdminPostDetailAudioSelectionMode = {
-  AUTO: 'AUTO',
-  MANUAL: 'MANUAL',
+  AUTO: "AUTO",
+  MANUAL: "MANUAL",
 } as const;

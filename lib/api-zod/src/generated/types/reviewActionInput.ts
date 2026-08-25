@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ReviewActionInputAction } from './reviewActionInputAction';
+import type { ReviewActionInputAction } from "./reviewActionInputAction";
 
 export interface ReviewActionInput {
   version: 1;

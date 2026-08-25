@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { LabelInputVisibility } from './labelInputVisibility';
+import type { LabelInputVisibility } from "./labelInputVisibility";
 
 export interface LabelInput {
   name: string;

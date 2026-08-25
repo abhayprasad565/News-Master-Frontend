@@ -5,7 +5,7 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminPost } from './adminPost';
+import type { AdminPost } from "./adminPost";
 
 export interface AdminPostList {
   items: AdminPost[];

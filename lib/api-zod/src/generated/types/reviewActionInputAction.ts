@@ -6,12 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ReviewActionInputAction = typeof ReviewActionInputAction[keyof typeof ReviewActionInputAction];
-
+export type ReviewActionInputAction =
+  (typeof ReviewActionInputAction)[keyof typeof ReviewActionInputAction];
 
 export const ReviewActionInputAction = {
-  APPROVE: 'APPROVE',
-  REJECT: 'REJECT',
-  REQUEUE: 'REQUEUE',
-  REQUEST_CORRECTION: 'REQUEST_CORRECTION',
+  APPROVE: "APPROVE",
+  REJECT: "REJECT",
+  REQUEUE: "REQUEUE",
+  REQUEST_CORRECTION: "REQUEST_CORRECTION",
 } as const;

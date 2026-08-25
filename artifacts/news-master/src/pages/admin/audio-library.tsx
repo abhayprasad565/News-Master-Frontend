@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Music2, Plus, Upload } from "lucide-react";
 import { apiFetch, toQuery } from "@/lib/api";
@@ -21,11 +21,13 @@ type AudioEnergyLevel = "CALM" | "NEUTRAL" | "UPBEAT";
 
 type AudioTrack = {
   id: string;
+  title: string | null;
   storageKey: string;
   theme: string;
   durationSeconds: number;
   energyLevel: AudioEnergyLevel;
   sensitiveSafe: boolean;
+  youtubeEligible: boolean;
   selectionCount: number;
   publishCount: number;
   tagSlugs: string[];
@@ -40,6 +42,11 @@ type AudioTag = {
 const mediaUrl = (storageKey: string) =>
   `/media/${storageKey.split("/").map(encodeURIComponent).join("/")}`;
 
+const trackName = (track: AudioTrack) =>
+  track.title?.trim() ||
+  track.storageKey.split("/").at(-1) ||
+  track.id.slice(0, 8);
+
 export default function AdminAudioLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -53,7 +60,25 @@ export default function AdminAudioLibrary() {
   const [theme, setTheme] = useState("general");
   const [energyLevel, setEnergyLevel] = useState<AudioEnergyLevel>("NEUTRAL");
   const [sensitiveSafe, setSensitiveSafe] = useState(true);
+  const [youtubeEligible, setYoutubeEligible] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [sourceDuration, setSourceDuration] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl("");
+      setSourceDuration(0);
+      setTrimStart(0);
+      setTrimEnd(0);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   const query = toQuery({
     theme: themeFilter || undefined,
@@ -109,7 +134,10 @@ export default function AdminAudioLibrary() {
       form.append("theme", theme);
       form.append("energyLevel", energyLevel);
       form.append("sensitiveSafe", String(sensitiveSafe));
+      form.append("youtubeEligible", String(youtubeEligible));
       form.append("tagSlugs", JSON.stringify(selectedTags));
+      form.append("trimStartSeconds", String(trimStart));
+      form.append("trimEndSeconds", String(trimEnd));
       return apiFetch<AudioTrack>("/api/admin/audio-tracks", {
         method: "POST",
         body: form,
@@ -124,6 +152,24 @@ export default function AdminAudioLibrary() {
     onError: (error: Error) =>
       toast({
         title: "Failed to upload song",
+        description: error.message,
+        variant: "destructive",
+      }),
+  });
+  const eligibilityMutation = useMutation({
+    mutationFn: (track: AudioTrack) =>
+      apiFetch<AudioTrack>(
+        `/api/admin/audio-tracks/${track.id}/youtube-eligibility`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ youtubeEligible: !track.youtubeEligible }),
+        },
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["audioTracks"] }),
+    onError: (error: Error) =>
+      toast({
+        title: "Eligibility update failed",
         description: error.message,
         variant: "destructive",
       }),
@@ -159,7 +205,10 @@ export default function AdminAudioLibrary() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpload} className="grid gap-5 grid-cols-1 sm:grid-cols-2">
+            <form
+              onSubmit={handleUpload}
+              className="grid gap-5 grid-cols-1 sm:grid-cols-2"
+            >
               <div className="space-y-2 sm:col-span-2">
                 <Label>Audio file</Label>
                 <Input
@@ -168,6 +217,55 @@ export default function AdminAudioLibrary() {
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                 />
               </div>
+              {previewUrl && (
+                <div className="space-y-3 sm:col-span-2 rounded-md border p-3">
+                  <Label>Trim uploaded song</Label>
+                  <audio
+                    src={previewUrl}
+                    controls
+                    className="w-full"
+                    onLoadedMetadata={(event) => {
+                      const duration = event.currentTarget.duration;
+                      if (!Number.isFinite(duration)) return;
+                      const rounded = Math.floor(duration * 100) / 100;
+                      setSourceDuration(rounded);
+                      setTrimEnd(rounded);
+                    }}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Start seconds</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={Math.max(0, trimEnd - 0.1)}
+                        step={0.1}
+                        value={trimStart}
+                        onChange={(event) =>
+                          setTrimStart(Number(event.currentTarget.value))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>End seconds</Label>
+                      <Input
+                        type="number"
+                        min={trimStart + 0.1}
+                        max={sourceDuration}
+                        step={0.1}
+                        value={trimEnd}
+                        onChange={(event) =>
+                          setTrimEnd(Number(event.currentTarget.value))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    The saved library track will be{" "}
+                    {Math.max(0, trimEnd - trimStart).toFixed(1)} seconds long.
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Theme</Label>
                 <Input
@@ -203,6 +301,15 @@ export default function AdminAudioLibrary() {
                 />
                 <Label>Sensitive-safe</Label>
               </div>
+              <div className="flex items-center gap-3 rounded-md border p-3">
+                <Checkbox
+                  checked={youtubeEligible}
+                  onCheckedChange={(checked) =>
+                    setYoutubeEligible(Boolean(checked))
+                  }
+                />
+                <Label>YouTube-eligible rights</Label>
+              </div>
               <div className="space-y-2">
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2">
@@ -230,7 +337,12 @@ export default function AdminAudioLibrary() {
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="submit"
-                  disabled={uploadMutation.isPending || !file}
+                  disabled={
+                    uploadMutation.isPending ||
+                    !file ||
+                    sourceDuration <= 0 ||
+                    trimEnd <= trimStart
+                  }
                 >
                   {uploadMutation.isPending
                     ? "Uploading..."
@@ -284,14 +396,14 @@ export default function AdminAudioLibrary() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Music2 className="h-5 w-5" /> Tracks
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <Select
                 value={themeFilter || "ALL"}
                 onValueChange={(value) =>
                   setThemeFilter(value === "ALL" ? "" : value)
                 }
               >
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -309,7 +421,7 @@ export default function AdminAudioLibrary() {
                   setEnergyFilter(value as AudioEnergyLevel | "ALL")
                 }
               >
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-full sm:w-36 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -324,7 +436,7 @@ export default function AdminAudioLibrary() {
         </CardHeader>
         <CardContent>
           {tracksLoading ? (
-            <div className="py-8 text-sm text-muted-foreground">
+            <div className="py-8 text-sm text-muted-foreground text-center">
               Loading tracks...
             </div>
           ) : tracks.length === 0 ? (
@@ -336,40 +448,64 @@ export default function AdminAudioLibrary() {
               {tracks.map((track) => (
                 <div
                   key={track.id}
-                  className="grid gap-3 rounded-md border p-3 md:grid-cols-[1fr_260px] md:items-center"
+                  className="flex flex-col gap-3 rounded-lg border p-3.5 bg-card/50 lg:flex-row lg:items-center lg:justify-between"
                 >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm">
+                  <div className="min-w-0 space-y-1.5 flex-1">
+                    <div
+                      className="truncate font-semibold text-sm sm:text-base text-foreground"
+                      title={trackName(track)}
+                    >
+                      {trackName(track)}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="font-mono text-[11px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
                         {track.id.slice(0, 8)}
                       </span>
-                      <Badge variant="outline">{track.theme}</Badge>
-                      <Badge variant="secondary">{track.energyLevel}</Badge>
+                      <Badge variant="outline" className="text-[11px]">{track.theme}</Badge>
+                      <Badge variant="secondary" className="text-[11px]">{track.energyLevel}</Badge>
                       {track.sensitiveSafe && (
-                        <Badge variant="outline">Sensitive-safe</Badge>
+                        <Badge variant="outline" className="text-[11px] border-emerald-500/40 text-emerald-600 dark:text-emerald-400">Sensitive-safe</Badge>
                       )}
+                      {track.youtubeEligible && (
+                        <Badge variant="outline" className="text-[11px] border-sky-500/40 text-sky-600 dark:text-sky-400">YouTube eligible</Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => eligibilityMutation.mutate(track)}
+                      >
+                        {track.youtubeEligible
+                          ? "Remove YouTube eligibility"
+                          : "Mark YouTube eligible"}
+                      </Button>
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
+                    <div className="text-[11px] text-muted-foreground">
                       {Math.round(track.durationSeconds)}s · selected{" "}
                       {track.selectionCount} · published {track.publishCount}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {track.tagSlugs.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-[10px]"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                    {track.tagSlugs.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {track.tagSlugs.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-[10px] py-0 px-1.5"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <audio
-                    controls
-                    src={mediaUrl(track.storageKey)}
-                    className="h-9 w-full"
-                  />
+                  <div className="w-full lg:w-72 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0">
+                    <audio
+                      controls
+                      preload="metadata"
+                      src={mediaUrl(track.storageKey)}
+                      className="h-9 w-full rounded-md"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

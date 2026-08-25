@@ -5,9 +5,9 @@
  * News Master API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminPost } from './adminPost';
-import type { Delivery } from './delivery';
-import type { Publication } from './publication';
+import type { AdminPost } from "./adminPost";
+import type { Delivery } from "./delivery";
+import type { Publication } from "./publication";
 
 export interface PublicationDetail {
   publication: Publication;
