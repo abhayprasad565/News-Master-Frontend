@@ -109,6 +109,104 @@ const isFormatComplete = (
   (destination.alreadyPublished === true &&
     format === getDefaultFormat(destination));
 
+const getDeliveryStatusBadge = (status?: string | null) => {
+  const s = status || "UNKNOWN";
+  switch (s) {
+    case "SENT":
+      return (
+        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-1.5 py-0.5 font-medium shadow-none">
+          <CheckCircle2 className="w-3 h-3 mr-1" /> Delivered
+        </Badge>
+      );
+    case "FAILED":
+      return (
+        <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 font-medium">
+          <AlertCircle className="w-3 h-3 mr-1" /> Failed
+        </Badge>
+      );
+    case "DEAD":
+      return (
+        <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 font-medium">
+          <AlertCircle className="w-3 h-3 mr-1" /> Dead
+        </Badge>
+      );
+    case "PENDING":
+      return (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 font-medium">
+          <Clock className="w-3 h-3 mr-1" /> Pending
+        </Badge>
+      );
+    case "WAITING_FOR_ASSET":
+      return (
+        <Badge variant="outline" className="border-slate-500 text-slate-400 text-[10px] px-1.5 py-0.5">
+          Waiting for asset
+        </Badge>
+      );
+    case "RENDERING":
+      return (
+        <Badge variant="outline" className="border-indigo-500 text-indigo-400 text-[10px] px-1.5 py-0.5">
+          <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Rendering
+        </Badge>
+      );
+    case "READY":
+      return (
+        <Badge variant="outline" className="border-cyan-500 text-cyan-400 text-[10px] px-1.5 py-0.5">
+          Ready
+        </Badge>
+      );
+    case "SENDING":
+      return (
+        <Badge variant="outline" className="border-blue-500 text-blue-400 text-[10px] px-1.5 py-0.5">
+          <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Sending...
+        </Badge>
+      );
+    case "RETRY":
+      return (
+        <Badge variant="outline" className="border-amber-500 text-amber-400 text-[10px] px-1.5 py-0.5">
+          <RefreshCw className="w-3 h-3 mr-1" /> Retry
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+          {s}
+        </Badge>
+      );
+  }
+};
+
+const getDeliveryFormatBadge = (format?: string | null) => {
+  const resolved = (format ?? "IMAGE").toUpperCase();
+  if (resolved === "REEL") {
+    return (
+      <Badge variant="default" className="bg-primary hover:bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 font-bold tracking-wider">
+        <Film className="w-2.5 h-2.5 mr-1" /> REEL
+      </Badge>
+    );
+  }
+  if (resolved === "TEXT_ONLY") {
+    return (
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 text-muted-foreground">
+        <FileText className="w-2.5 h-2.5 mr-1" /> TEXT
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 border-border">
+      <ImageIcon className="w-2.5 h-2.5 mr-1" /> IMAGE
+    </Badge>
+  );
+};
+
+const getPlatformDisplayName = (platform: string) => {
+  const p = (platform || "").toLowerCase();
+  if (p === "instagram") return "Instagram";
+  if (p === "telegram") return "Telegram";
+  if (p === "youtube") return "YouTube";
+  if (p === "x" || p === "twitter") return "X (Twitter)";
+  return platform ? platform.toUpperCase() : "Unknown";
+};
+
 export default function AdminPostDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
@@ -968,28 +1066,130 @@ export default function AdminPostDetail() {
           </Card>
 
           {detail.publication && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold">
-                  Publication Record
-                </CardTitle>
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <Send className="w-4 h-4 text-primary" />
+                    Publication Record
+                  </CardTitle>
+                  <Badge variant="secondary" className="font-mono text-xs font-bold">
+                    v{detail.publication.revision}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between py-1 border-b">
-                  <span className="text-muted-foreground">Rev.</span>
-                  <span className="font-mono font-bold">
-                    v{detail.publication.revision}
+                <div className="flex justify-between py-1 text-xs text-muted-foreground border-b pb-2">
+                  <span>Published At</span>
+                  <span className="font-medium text-foreground">
+                    {format(new Date(detail.publication.createdAt), "MMM d, yyyy HH:mm")}
                   </span>
                 </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground pt-1">
+                    <span>Destinations & Deliveries</span>
+                    <span>{((detail as any).deliveries?.length || 0)} total</span>
+                  </div>
+
+                  {!((detail as any).deliveries?.length) ? (
+                    <div className="text-xs text-muted-foreground py-3 text-center bg-muted/30 rounded-md border border-dashed">
+                      No deliveries registered for this revision yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {((detail as any).deliveries as any[]).map((del) => (
+                        <div
+                          key={del.id}
+                          className="p-2.5 rounded-lg border bg-card hover:bg-muted/20 transition-colors space-y-2 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1.5 font-medium">
+                              <span>{getPlatformDisplayName(del.platform)}</span>
+                              {getDeliveryFormatBadge(del.format)}
+                            </div>
+                            {getDeliveryStatusBadge(del.status)}
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                            <span className="font-mono truncate max-w-[160px]" title={del.destination}>
+                              {del.destination || "Default"}
+                            </span>
+                            <span className="font-mono">
+                              {del.attemptCount} {del.attemptCount === 1 ? "attempt" : "attempts"}
+                            </span>
+                          </div>
+
+                          {del.lastError && (
+                            <div
+                              className="text-[11px] text-destructive bg-destructive/10 p-1.5 rounded border border-destructive/20 line-clamp-2"
+                              title={del.lastError}
+                            >
+                              {del.lastError}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[11px]">
+                            <Link
+                              href={`/admin/deliveries/${del.id}`}
+                              className="text-primary hover:underline font-mono text-[11px]"
+                            >
+                              Delivery #{del.id.slice(0, 8)} →
+                            </Link>
+
+                            {(del.status === "FAILED" ||
+                              del.status === "DEAD" ||
+                              del.status === "UNKNOWN" ||
+                              del.status === "RETRY") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 border-destructive/50 text-destructive hover:bg-destructive/10"
+                                onClick={async () => {
+                                  try {
+                                    await apiFetch(
+                                      `/api/admin/deliveries/${del.id}/retry`,
+                                      {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                          reason:
+                                            "Manual admin retry from post detail",
+                                        }),
+                                      },
+                                    );
+                                    toast({
+                                      title: `Retrying delivery for ${del.platform}`,
+                                    });
+                                    refetch();
+                                  } catch (err: any) {
+                                    toast({
+                                      title: "Failed to retry",
+                                      description: err.message,
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="w-2.5 h-2.5 mr-1" />
+                                Retry
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full text-xs"
                     asChild
                   >
                     <Link href={`/admin/publications/${detail.publication.id}`}>
-                      View Deliveries
+                      View Full Publication Details →
                     </Link>
                   </Button>
                 </div>
