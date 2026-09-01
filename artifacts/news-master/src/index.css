@@ -125,31 +125,37 @@
 }
 
 .dark {
+  --button-outline: rgba(255, 255, 255, 0.15);
+  --badge-outline: rgba(255, 255, 255, 0.12);
+  --opaque-button-border-intensity: 8;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(0, 0, 0, 0.5);
+
   --background: 0 0% 6%;
   --foreground: 0 0% 98%;
 
-  --border: 0 0% 14%;
-  --input: 0 0% 14%;
+  --border: 0 0% 22%;
+  --input: 0 0% 24%;
   --ring: 0 0% 98%;
 
   --card: 0 0% 9%;
   --card-foreground: 0 0% 98%;
-  --card-border: 0 0% 14%;
+  --card-border: 0 0% 22%;
 
   --popover: 0 0% 9%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 0 0% 14%;
+  --popover-border: 0 0% 22%;
 
   --primary: 350 75% 55%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 14%;
+  --secondary: 0 0% 15%;
   --secondary-foreground: 0 0% 98%;
 
-  --muted: 0 0% 14%;
-  --muted-foreground: 0 0% 60%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 65%;
 
-  --accent: 0 0% 14%;
+  --accent: 0 0% 15%;
   --accent-foreground: 0 0% 98%;
 
   --destructive: 0 62% 30%;
@@ -157,10 +163,10 @@
 
   --sidebar: 0 0% 9%;
   --sidebar-foreground: 0 0% 80%;
-  --sidebar-border: 0 0% 14%;
+  --sidebar-border: 0 0% 20%;
   --sidebar-primary: 0 0% 98%;
   --sidebar-primary-foreground: 0 0% 9%;
-  --sidebar-accent: 0 0% 14%;
+  --sidebar-accent: 0 0% 16%;
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-ring: 0 0% 98%;
 }
