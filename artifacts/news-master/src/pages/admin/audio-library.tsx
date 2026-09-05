@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Music2, Plus, Upload } from "lucide-react";
+import { Clock, Loader2, Music2, Pause, Play, Plus, RotateCcw, Trash2, Upload } from "lucide-react";
 import { apiFetch, toQuery } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,9 +47,270 @@ const trackName = (track: AudioTrack) =>
   track.storageKey.split("/").at(-1) ||
   track.id.slice(0, 8);
 
+async function detectAudioDuration(file: File): Promise<number | null> {
+  // Strategy 1: Web Audio API AudioContext (decodes audio binary directly in browser)
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (AudioCtx) {
+      const audioCtx = new AudioCtx();
+      try {
+        const buffer = await file.arrayBuffer();
+        const decoded = await audioCtx.decodeAudioData(buffer.slice(0));
+        if (
+          decoded &&
+          Number.isFinite(decoded.duration) &&
+          decoded.duration > 0
+        ) {
+          return Math.floor(decoded.duration * 100) / 100;
+        }
+      } finally {
+        await audioCtx.close().catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn("AudioContext decode error:", err);
+  }
+
+  // Strategy 2: HTML5 Audio probe
+  try {
+    const url = URL.createObjectURL(file);
+    try {
+      const audio = new Audio();
+      audio.preload = "auto";
+      audio.src = url;
+      const duration = await new Promise<number | null>((resolve) => {
+        let done = false;
+        const complete = (val: number | null) => {
+          if (done) return;
+          done = true;
+          cleanup();
+          resolve(val);
+        };
+        const onCheck = () => {
+          const d = audio.duration;
+          if (Number.isFinite(d) && d > 0) {
+            complete(Math.floor(d * 100) / 100);
+          } else if (d === Infinity) {
+            audio.currentTime = 1e10;
+            audio.ontimeupdate = () => {
+              audio.ontimeupdate = null;
+              audio.currentTime = 0;
+              const realD = audio.duration;
+              complete(
+                Number.isFinite(realD) && realD > 0
+                  ? Math.floor(realD * 100) / 100
+                  : null,
+              );
+            };
+          }
+        };
+        const cleanup = () => {
+          audio.removeEventListener("loadedmetadata", onCheck);
+          audio.removeEventListener("durationchange", onCheck);
+          audio.removeEventListener("canplay", onCheck);
+          audio.removeEventListener("error", onErr);
+        };
+        const onErr = () => complete(null);
+        audio.addEventListener("loadedmetadata", onCheck);
+        audio.addEventListener("durationchange", onCheck);
+        audio.addEventListener("canplay", onCheck);
+        audio.addEventListener("error", onErr);
+        setTimeout(() => {
+          const d = audio.duration;
+          complete(
+            Number.isFinite(d) && d > 0 ? Math.floor(d * 100) / 100 : null,
+          );
+        }, 4000);
+      });
+      if (duration) return duration;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch {
+    // fallback
+  }
+
+  return null;
+}
+
+function formatSeconds(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  const tenths = Math.floor((seconds % 1) * 10);
+  return `${mins}:${secs.toString().padStart(2, "0")}.${tenths}`;
+}
+
+function TrackAudioPlayer({
+  track,
+  isActive,
+  onPlay,
+}: {
+  track: AudioTrack;
+  isActive: boolean;
+  onPlay: () => void;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(track.durationSeconds || 0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [blobSrc, setBlobSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isActive && isPlaying) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    }
+  }, [isActive, isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (blobSrc) URL.revokeObjectURL(blobSrc);
+    };
+  }, [blobSrc]);
+
+  async function loadBlobFallback(): Promise<string | null> {
+    if (blobSrc) return blobSrc;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(mediaUrl(track.storageKey), {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setBlobSrc(url);
+      return url;
+    } catch {
+      setError("Failed to load audio");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    onPlay();
+    setError(null);
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch {
+      const fallbackUrl = await loadBlobFallback();
+      if (fallbackUrl && audioRef.current) {
+        audioRef.current.src = fallbackUrl;
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch {
+          setError("Playback error");
+        }
+      }
+    }
+  }
+
+  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = Number(e.target.value);
+    setCurrentTime(val);
+    if (audioRef.current) {
+      audioRef.current.currentTime = val;
+    }
+  }
+
+  const effectiveDuration = duration > 0 ? duration : track.durationSeconds;
+
+  return (
+    <div className="flex items-center gap-2.5 bg-muted/40 border rounded-md px-2.5 py-1.5 w-full">
+      <audio
+        ref={audioRef}
+        src={blobSrc || mediaUrl(track.storageKey)}
+        preload="metadata"
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+        }}
+        onLoadedMetadata={() => {
+          if (
+            audioRef.current &&
+            Number.isFinite(audioRef.current.duration) &&
+            audioRef.current.duration > 0
+          ) {
+            setDuration(audioRef.current.duration);
+          }
+        }}
+        onEnded={() => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }}
+        onError={() => {
+          if (!blobSrc) {
+            void loadBlobFallback();
+          }
+        }}
+      />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20 text-primary"
+        onClick={togglePlay}
+        disabled={isLoading}
+        title={isPlaying ? "Pause" : "Play track"}
+      >
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : isPlaying ? (
+          <Pause className="h-4 w-4 fill-current" />
+        ) : (
+          <Play className="h-4 w-4 fill-current ml-0.5" />
+        )}
+      </Button>
+
+      <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+        <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground leading-none">
+          <span>{formatSeconds(currentTime)}</span>
+          <span>{formatSeconds(effectiveDuration)}</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={effectiveDuration || 100}
+          step={0.1}
+          value={currentTime}
+          onChange={handleSeek}
+          className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+        />
+      </div>
+
+      {error && (
+        <span className="text-[10px] text-destructive shrink-0" title={error}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAudioLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [themeFilter, setThemeFilter] = useState("");
   const [energyFilter, setEnergyFilter] = useState<AudioEnergyLevel | "ALL">(
     "ALL",
@@ -64,8 +325,11 @@ export default function AdminAudioLibrary() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [previewUrl, setPreviewUrl] = useState("");
   const [sourceDuration, setSourceDuration] = useState(0);
+  const [isDetectingDuration, setIsDetectingDuration] = useState(false);
+  const [enableTrim, setEnableTrim] = useState(false);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!file) {
@@ -73,12 +337,40 @@ export default function AdminAudioLibrary() {
       setSourceDuration(0);
       setTrimStart(0);
       setTrimEnd(0);
+      setEnableTrim(false);
+      setIsDetectingDuration(false);
       return;
     }
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
+    setIsDetectingDuration(true);
+
+    let cancelled = false;
+    void detectAudioDuration(file).then((dur) => {
+      if (cancelled) return;
+      setIsDetectingDuration(false);
+      if (dur && dur > 0) {
+        setSourceDuration(dur);
+        setTrimStart(0);
+        setTrimEnd(dur);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      URL.revokeObjectURL(url);
+    };
   }, [file]);
+
+  function handleAudioMetadata(event: React.SyntheticEvent<HTMLAudioElement>) {
+    const audio = event.currentTarget;
+    const d = audio.duration;
+    if (Number.isFinite(d) && d > 0) {
+      const rounded = Math.floor(d * 100) / 100;
+      setSourceDuration((prev) => (prev > 0 ? prev : rounded));
+      setTrimEnd((prev) => (prev > 0 ? prev : rounded));
+    }
+  }
 
   const query = toQuery({
     theme: themeFilter || undefined,
@@ -136,8 +428,10 @@ export default function AdminAudioLibrary() {
       form.append("sensitiveSafe", String(sensitiveSafe));
       form.append("youtubeEligible", String(youtubeEligible));
       form.append("tagSlugs", JSON.stringify(selectedTags));
-      form.append("trimStartSeconds", String(trimStart));
-      form.append("trimEndSeconds", String(trimEnd));
+      if (enableTrim && trimEnd > trimStart) {
+        form.append("trimStartSeconds", String(trimStart));
+        form.append("trimEndSeconds", String(trimEnd));
+      }
       return apiFetch<AudioTrack>("/api/admin/audio-tracks", {
         method: "POST",
         body: form,
@@ -146,6 +440,10 @@ export default function AdminAudioLibrary() {
     onSuccess: () => {
       setFile(null);
       setSelectedTags([]);
+      setEnableTrim(false);
+      setSourceDuration(0);
+      setTrimStart(0);
+      setTrimEnd(0);
       queryClient.invalidateQueries({ queryKey: ["audioTracks"] });
       toast({ title: "Song uploaded and normalized" });
     },
@@ -170,6 +468,23 @@ export default function AdminAudioLibrary() {
     onError: (error: Error) =>
       toast({
         title: "Eligibility update failed",
+        description: error.message,
+        variant: "destructive",
+      }),
+  });
+
+  const deleteTrackMutation = useMutation({
+    mutationFn: (trackId: string) =>
+      apiFetch(`/api/admin/audio-tracks/${trackId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["audioTracks"] });
+      toast({ title: "Audio track deleted" });
+    },
+    onError: (error: Error) =>
+      toast({
+        title: "Failed to delete track",
         description: error.message,
         variant: "destructive",
       }),
@@ -217,53 +532,205 @@ export default function AdminAudioLibrary() {
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                 />
               </div>
-              {previewUrl && (
-                <div className="space-y-3 sm:col-span-2 rounded-md border p-3">
-                  <Label>Trim uploaded song</Label>
-                  <audio
-                    src={previewUrl}
-                    controls
-                    className="w-full"
-                    onLoadedMetadata={(event) => {
-                      const duration = event.currentTarget.duration;
-                      if (!Number.isFinite(duration)) return;
-                      const rounded = Math.floor(duration * 100) / 100;
-                      setSourceDuration(rounded);
-                      setTrimEnd(rounded);
-                    }}
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Start seconds</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={Math.max(0, trimEnd - 0.1)}
-                        step={0.1}
-                        value={trimStart}
-                        onChange={(event) =>
-                          setTrimStart(Number(event.currentTarget.value))
-                        }
-                      />
+              {file && previewUrl && (
+                <div className="space-y-4 sm:col-span-2 rounded-lg border bg-muted/20 p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Music2 className="h-4 w-4 text-primary" />
+                      <span
+                        className="text-sm font-medium truncate max-w-xs sm:max-w-md"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      <Label>End seconds</Label>
-                      <Input
-                        type="number"
-                        min={trimStart + 0.1}
-                        max={sourceDuration}
-                        step={0.1}
-                        value={trimEnd}
-                        onChange={(event) =>
-                          setTrimEnd(Number(event.currentTarget.value))
-                        }
-                      />
+                    <div className="flex items-center gap-2 text-xs">
+                      {isDetectingDuration ? (
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Analyzing soundtrack...
+                        </span>
+                      ) : sourceDuration > 0 ? (
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          Duration: {formatSeconds(sourceDuration)} ({sourceDuration.toFixed(1)}s)
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-amber-600 dark:text-amber-400 text-xs"
+                        >
+                          Server will detect duration
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    The saved library track will be{" "}
-                    {Math.max(0, trimEnd - trimStart).toFixed(1)} seconds long.
-                  </p>
+
+                  <audio
+                    ref={audioRef}
+                    src={previewUrl}
+                    preload="auto"
+                    controls
+                    className="w-full h-10 rounded"
+                    onLoadedMetadata={handleAudioMetadata}
+                    onDurationChange={handleAudioMetadata}
+                    onCanPlay={handleAudioMetadata}
+                  />
+
+                  <div className="pt-2 border-t">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="enableTrim"
+                        checked={enableTrim}
+                        onCheckedChange={(checked) => {
+                          const active = Boolean(checked);
+                          setEnableTrim(active);
+                          if (active) {
+                            if (sourceDuration > 0 && trimEnd <= trimStart) {
+                              setTrimStart(0);
+                              setTrimEnd(sourceDuration);
+                            }
+                          }
+                        }}
+                      />
+                      <div className="grid gap-1 leading-none">
+                        <Label
+                          htmlFor="enableTrim"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Trim uploaded song before saving
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {enableTrim
+                            ? "Select a specific start and end portion of the song to use in Reel library."
+                            : sourceDuration > 0
+                            ? `Save full track (${sourceDuration.toFixed(1)}s) into library without trimming.`
+                            : "Save full track into library without trimming."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {enableTrim && (
+                    <div className="space-y-3 pt-2 border-t bg-background/50 rounded-md p-3">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium">Start seconds</Label>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[11px] px-1.5 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                if (audioRef.current) {
+                                  const current =
+                                    Math.floor(audioRef.current.currentTime * 10) / 10;
+                                  setTrimStart(current);
+                                }
+                              }}
+                            >
+                              <Clock className="h-3 w-3 mr-1" /> Use current time
+                            </Button>
+                          </div>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={sourceDuration > 0 ? Math.max(0, trimEnd - 0.1) : 600}
+                            step={0.1}
+                            value={trimStart}
+                            onChange={(event) =>
+                              setTrimStart(Math.max(0, Number(event.currentTarget.value) || 0))
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-medium">End seconds</Label>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[11px] px-1.5 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                if (audioRef.current) {
+                                  const current =
+                                    Math.floor(audioRef.current.currentTime * 10) / 10;
+                                  setTrimEnd(current);
+                                }
+                              }}
+                            >
+                              <Clock className="h-3 w-3 mr-1" /> Use current time
+                            </Button>
+                          </div>
+                          <Input
+                            type="number"
+                            min={trimStart + 0.1}
+                            max={sourceDuration > 0 ? sourceDuration : 600}
+                            step={0.1}
+                            value={trimEnd}
+                            onChange={(event) =>
+                              setTrimEnd(Number(event.currentTarget.value) || 0)
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1 text-xs">
+                        <div>
+                          {trimEnd > trimStart ? (
+                            <span className="text-muted-foreground">
+                              The saved library track will be{" "}
+                              <strong className="text-foreground">
+                                {(trimEnd - trimStart).toFixed(1)}s
+                              </strong>{" "}
+                              long ({formatSeconds(trimEnd - trimStart)}).
+                            </span>
+                          ) : (
+                            <span className="text-destructive font-medium">
+                              End seconds must be greater than start seconds.
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {sourceDuration > 0 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setTrimStart(0);
+                                setTrimEnd(sourceDuration);
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" /> Reset to full track
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              if (audioRef.current && trimEnd > trimStart) {
+                                audioRef.current.currentTime = trimStart;
+                                void audioRef.current.play();
+                                const durationMs = (trimEnd - trimStart) * 1000;
+                                setTimeout(() => {
+                                  if (audioRef.current && !audioRef.current.paused) {
+                                    audioRef.current.pause();
+                                  }
+                                }, durationMs);
+                              }
+                            }}
+                            disabled={trimEnd <= trimStart}
+                          >
+                            <Play className="h-3 w-3 mr-1" /> Preview segment
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="space-y-2">
@@ -340,13 +807,18 @@ export default function AdminAudioLibrary() {
                   disabled={
                     uploadMutation.isPending ||
                     !file ||
-                    sourceDuration <= 0 ||
-                    trimEnd <= trimStart
+                    isDetectingDuration ||
+                    (enableTrim && (trimEnd <= trimStart || trimStart < 0))
                   }
                 >
-                  {uploadMutation.isPending
-                    ? "Uploading..."
-                    : "Upload & Normalize"}
+                  {uploadMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Uploading & Normalizing...
+                    </>
+                  ) : (
+                    "Upload & Normalize"
+                  )}
                 </Button>
               </div>
             </form>
@@ -479,6 +951,20 @@ export default function AdminAudioLibrary() {
                           ? "Remove YouTube eligibility"
                           : "Mark YouTube eligible"}
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-[11px] px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => {
+                          if (confirm(`Delete "${trackName(track)}"?`)) {
+                            deleteTrackMutation.mutate(track.id);
+                          }
+                        }}
+                        disabled={deleteTrackMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       {Math.round(track.durationSeconds)}s · selected{" "}
@@ -498,12 +984,11 @@ export default function AdminAudioLibrary() {
                       </div>
                     )}
                   </div>
-                  <div className="w-full lg:w-72 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0">
-                    <audio
-                      controls
-                      preload="metadata"
-                      src={mediaUrl(track.storageKey)}
-                      className="h-9 w-full rounded-md"
+                  <div className="w-full lg:w-80 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0">
+                    <TrackAudioPlayer
+                      track={track}
+                      isActive={activeTrackId === track.id}
+                      onPlay={() => setActiveTrackId(track.id)}
                     />
                   </div>
                 </div>
