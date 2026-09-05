@@ -123,13 +123,29 @@ export default function AdminReviewQueue() {
   function submitAction() {
     if (!selectedJob || !actionType) return;
 
+    const trimmedReason = actionReason.trim();
+    const defaultReason =
+      actionType === "APPROVE"
+        ? "Approved by administrator"
+        : actionType === "REJECT"
+          ? "Rejected by administrator"
+          : actionType === "REQUEST_CORRECTION"
+            ? "Correction requested by administrator"
+            : "Requeued by administrator";
+
+    const reason = trimmedReason.length >= 3 ? trimmedReason : defaultReason;
+    const expectedVersion =
+      typeof selectedJob.version === "number" && selectedJob.version > 0
+        ? selectedJob.version
+        : Number(selectedJob.version) || 1;
+
     const payload = {
       jobId: selectedJob.id,
       data: {
         version: 1 as const,
         action: actionType,
-        reason: actionReason || "No reason provided",
-        expectedVersion: selectedJob.version,
+        reason,
+        expectedVersion,
       },
     };
 
@@ -302,71 +318,54 @@ export default function AdminReviewQueue() {
                     </Button>
                   )}
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="default"
-                        className="w-full bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setActionType("APPROVE");
-                          setActionReason("");
-                        }}
-                      >
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
-                      </Button>
-                    </DialogTrigger>
-                    {/* Dialog content is shared below to avoid multiple instances */}
-                  </Dialog>
+                  <Button
+                    variant="default"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      setSelectedJob(job);
+                      setActionType("APPROVE");
+                      setActionReason("Approved by administrator");
+                    }}
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+                  </Button>
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setActionType("REJECT");
-                          setActionReason("");
-                        }}
-                      >
-                        <XCircle className="mr-2 h-4 w-4" /> Reject
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedJob(job);
+                      setActionType("REJECT");
+                      setActionReason("Rejected by administrator");
+                    }}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" /> Reject
+                  </Button>
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setActionType("REQUEST_CORRECTION");
-                          setActionReason("");
-                        }}
-                      >
-                        <AlertTriangle className="mr-2 h-4 w-4" /> Request
-                        Correction
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedJob(job);
+                      setActionType("REQUEST_CORRECTION");
+                      setActionReason("Correction requested by administrator");
+                    }}
+                  >
+                    <AlertTriangle className="mr-2 h-4 w-4" /> Request
+                    Correction
+                  </Button>
 
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setActionType("REQUEUE");
-                          setActionReason("");
-                        }}
-                      >
-                        <RotateCcw className="mr-2 h-4 w-4" /> Requeue
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedJob(job);
+                      setActionType("REQUEUE");
+                      setActionReason("Requeued by administrator");
+                    }}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" /> Requeue
+                  </Button>
                 </div>
               </div>
             </Card>
